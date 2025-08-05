@@ -4,6 +4,7 @@ require "active_agent/generation_provider"
 require "active_agent/version"
 require "active_agent/deprecator"
 require "active_agent/railtie" if defined?(Rails)
+require "active_agent/sanitizers"
 
 require "active_support"
 require "active_support/rails"
@@ -12,9 +13,8 @@ require "active_support/core_ext/module/attr_internal"
 require "active_support/core_ext/string/inflections"
 require "active_support/lazy_load_hooks"
 module ActiveAgent
+  include ActiveAgent::Sanitizers
   extend ActiveSupport::Autoload
-
-  SECRETS_KEYS = %w[access_token api_key]
 
   eager_autoload do
     autoload :Collector
@@ -62,37 +62,6 @@ module ActiveAgent
       end
 
       sanitizers_reset!
-    end
-
-    # @return [Hash] The current sanitizers.
-    def sanitizers
-      @sanitizers ||= begin
-        sanitizers = {}
-
-        config.each do |provider, credentials|
-          credentials.slice(*SECRETS_KEYS).compact.each do |name, secret|
-            next if secret.blank?
-
-            sanitizers[secret] = "<#{provider.upcase}_#{name.upcase}>"
-          end
-        end
-
-        sanitizers
-      end
-    end
-
-    # return [void]
-    def sanitizers_reset!
-      @sanitizers = nil
-    end
-
-    # @return [String] The sanitized string with sensitive data replaced by placeholders.
-    def sanitize_credentials(string)
-      sanitizers.each do |secret, placeholder|
-        string = string.gsub(secret, placeholder)
-      end
-
-      string
     end
   end
 end
