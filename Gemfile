@@ -14,3 +14,5 @@ group :development, :test do
   gem "vcr"
   gem "webmock"
 end
+
+gem "pry", require: false

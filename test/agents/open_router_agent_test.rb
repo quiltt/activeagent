@@ -1,4 +1,5 @@
 require "test_helper"
+require "pry"
 
 class OpenRouterAgentTest < ActiveSupport::TestCase
   test "it renders a prompt_context and generates a response" do
@@ -25,5 +26,39 @@ class OpenRouterAgentTest < ActiveSupport::TestCase
     prompt = OpenRouterAgent.with(message: "Test").prompt_context
     system_message = prompt.messages.find { |m| m.role == :system }
     assert_equal "You're a basic Open Router agent.", system_message.content
+  end
+
+  test "agent can use plugins in prompt" do
+    prompt = OpenRouterAgent.with(
+      file_data: "data:application/pdf;base64,test_data"
+    ).parse_document
+
+    binding.pry
+    assert_equal({
+      id: 'file-parser',
+      pdf: {
+        engine: 'pdf-text'
+      }
+    }, prompt.options[:plugins])
+  end
+
+  test "plugins are passed through option hierarchy" do
+    prompt = OpenRouterAgent.with(
+      options: {
+        plugins: {
+          id: 'custom-parser',
+          pdf: {
+            engine: 'advanced-ocr'
+          }
+        }
+      }
+    ).parse_document
+
+    assert_equal({
+      id: 'file-parser',
+      pdf: {
+        engine: 'pdf-text'
+      }
+    }, prompt.options[:plugins])
   end
 end
