@@ -23,6 +23,9 @@ module ActiveAgent
         # Data collection preference (allow, deny, or specific provider list)
         @data_collection = config["data_collection"] || @provider_preferences["data_collection"] || "allow"
 
+        # Require parameters preference (defaults to false)
+        @require_parameters = config["require_parameters"] || @provider_preferences["require_parameters"] || false
+
         # Initialize OpenAI client with OpenRouter base URL
         @client = OpenAI::Client.new(
           uri_base: "https://openrouter.ai/api/v1",
@@ -144,9 +147,10 @@ module ActiveAgent
         parameters[:transforms] = @transforms if @transforms.present?
 
         # Add provider preferences (always include if we have data_collection or other settings)
-        # Check both configured and runtime data_collection values
+        # Check both configured and runtime data_collection/require_parameters values
         runtime_data_collection = prompt&.options&.key?(:data_collection)
-        if @provider_preferences.present? || @data_collection != "allow" || runtime_data_collection
+        runtime_require_parameters = prompt&.options&.key?(:require_parameters)
+        if @provider_preferences.present? || @data_collection != "allow" || @require_parameters != false || runtime_data_collection || runtime_require_parameters
           parameters[:provider] = build_provider_preferences
         end
 
@@ -160,7 +164,12 @@ module ActiveAgent
       def build_provider_preferences
         prefs = {}
         prefs[:order] = @provider_preferences["order"] if @provider_preferences["order"]
-        prefs[:require_parameters] = @provider_preferences["require_parameters"] if @provider_preferences.key?("require_parameters")
+        
+        # Require parameters can be overridden at runtime
+        require_parameters = prompt.options[:require_parameters] if prompt&.options&.key?(:require_parameters)
+        require_parameters = @require_parameters if require_parameters.nil?
+        prefs[:require_parameters] = require_parameters if require_parameters != false
+        
         prefs[:allow_fallbacks] = @enable_fallbacks
 
         # Data collection can be:
@@ -186,9 +195,10 @@ module ActiveAgent
         params[:transforms] = @transforms if @transforms.present?
 
         # Add provider configuration (always include if we have data_collection or other settings)
-        # Check both configured and runtime data_collection values
+        # Check both configured and runtime data_collection/require_parameters values
         runtime_data_collection = prompt&.options&.key?(:data_collection)
-        if @provider_preferences.present? || @data_collection != "allow" || runtime_data_collection
+        runtime_require_parameters = prompt&.options&.key?(:require_parameters)
+        if @provider_preferences.present? || @data_collection != "allow" || @require_parameters != false || runtime_data_collection || runtime_require_parameters
           params[:provider] = build_provider_preferences
         end
 
