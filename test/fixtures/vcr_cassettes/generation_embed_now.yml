@@ -23,7 +23,7 @@ http_interactions:
       message: OK
     headers:
       Date:
-      - Tue, 26 Aug 2025 18:16:58 GMT
+      - Tue, 26 Aug 2025 18:19:44 GMT
       Content-Type:
       - application/json
       Transfer-Encoding:
@@ -39,7 +39,7 @@ http_interactions:
       Openai-Organization:
       - user-lwlf4w2yvortlzept3wqx7li
       Openai-Processing-Ms:
-      - '85'
+      - '101'
       Openai-Project:
       - proj_KAJGwI6N1x3lWSKGr0zi2zcu
       Openai-Version:
@@ -47,9 +47,9 @@ http_interactions:
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
       Via:
-      - envoy-router-74b9c68cd4-g655l
+      - envoy-router-9b99cf5fc-fl9xk
       X-Envoy-Upstream-Service-Time:
-      - '724'
+      - '201'
       X-Ratelimit-Limit-Requests:
       - '3000'
       X-Ratelimit-Limit-Tokens:
@@ -63,21 +63,21 @@ http_interactions:
       X-Ratelimit-Reset-Tokens:
       - 0s
       X-Request-Id:
-      - req_cb1d1a13ed234a019ab124b6566c93ae
+      - req_2f4a4c815c7643caabc5e17f513d43fa
       Cf-Cache-Status:
       - DYNAMIC
       Set-Cookie:
-      - __cf_bm=q9wR42obfH1DhDzznsAByFXteqRoHgdVtjWAEvGMJbQ-1756232218-1.0.1.1-vXZ8aevfoLPzcDEc87Ne1L.N4dA4c18fpWvN52L7Om1N88r4uTdy3Fcr2A1Q1o3sNUdTRxJLwVqNiW8esBMx_C1yViKasPIhKftoVdv7BZ8;
-        path=/; expires=Tue, 26-Aug-25 18:46:58 GMT; domain=.api.openai.com; HttpOnly;
+      - __cf_bm=P3fp7E8jbY8sNpZb2TpLt18AJG6fUsbtO7zDB0N4OH4-1756232384-1.0.1.1-jwYl2LZofimA0gbgL.PKDBT0nfxdv245g8QUkW5IuX9azsGVAzmFVeZEONwDHt6Uz93Wo6vxqbnDWiKi8HpVlynV3.yIir4zVN3mGVLfeBY;
+        path=/; expires=Tue, 26-Aug-25 18:49:44 GMT; domain=.api.openai.com; HttpOnly;
         Secure; SameSite=None
-      - _cfuvid=MqlrdihYxN0WkwbbuM7nZnep_ftaZGZ7dDR84nfFsqY-1756232218714-0.0.1.1-604800000;
+      - _cfuvid=WqBGcgfo66V3i1PjVGiRMCWaIlnOCL7_grxsNYMiWrg-1756232384971-0.0.1.1-604800000;
         path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
       X-Content-Type-Options:
       - nosniff
       Server:
       - cloudflare
       Cf-Ray:
-      - 975552b8bd611694-SJC
+      - 975556d32c156802-SJC
       Alt-Svc:
       - h3=":443"; ma=86400
     body:
@@ -3171,5 +3171,5 @@ http_interactions:
             "total_tokens": 4
           }
         }
-  recorded_at: Tue, 26 Aug 2025 18:16:58 GMT
+  recorded_at: Tue, 26 Aug 2025 18:19:44 GMT
 recorded_with: VCR 6.3.1
