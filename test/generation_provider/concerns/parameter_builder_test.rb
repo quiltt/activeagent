@@ -3,9 +3,7 @@
 require "test_helper"
 require "ostruct"
 require "active_agent/action_prompt/message"
-require "active_agent/generation_provider/parameter_builder"
-require "active_agent/generation_provider/message_formatting"
-require "active_agent/generation_provider/tool_management"
+require "active_agent/generation_provider/_base_provider"
 
 class ParameterBuilderTest < ActiveSupport::TestCase
   class TestProvider
