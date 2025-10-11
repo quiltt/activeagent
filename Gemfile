@@ -13,4 +13,6 @@ group :development, :test do
   gem "sqlite3"
   gem "vcr"
   gem "webmock"
+
+  gem "pry"
 end
