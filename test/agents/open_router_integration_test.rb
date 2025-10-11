@@ -428,10 +428,10 @@ class OpenRouterIntegrationTest < ActiveSupport::TestCase
     )
 
     # Get the headers that would be sent
-    headers = provider.send(:openrouter_headers)
+    headers = provider.send(:options).send(:client_options_extra_headers)
 
-    assert_equal "https://test.example.com", headers["HTTP-Referer"]
-    assert_equal "TestApp", headers["X-Title"]
+    assert_equal "https://test.example.com", headers["http-referer"]
+    assert_equal "TestApp", headers["x-title"]
   end
 
   test "builds provider preferences correctly" do
@@ -502,7 +502,7 @@ class OpenRouterIntegrationTest < ActiveSupport::TestCase
       "site_url" => "https://configured.example.com"
     )
 
-    assert_equal "https://configured.example.com", provider.instance_variable_get(:@site_url)
+    assert_equal "https://configured.example.com", provider.instance_variable_get(:@options).site_url
 
     # Test with default_url_options in config
     provider = ActiveAgent::GenerationProvider::OpenRouterProvider.new(
@@ -512,7 +512,7 @@ class OpenRouterIntegrationTest < ActiveSupport::TestCase
       }
     )
 
-    assert_equal "fromconfig.example.com", provider.instance_variable_get(:@site_url)
+    assert_equal "fromconfig.example.com", provider.instance_variable_get(:@options).site_url
   end
 
   test "handles rate limit information in metadata" do

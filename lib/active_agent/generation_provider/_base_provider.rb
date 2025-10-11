@@ -10,7 +10,7 @@ require_relative "responses_adapter"
 
 GEM_LOADERS = {
   anthropic: [ "ruby-anthropic", "~> 0.4.2", "anthropic" ],
-  openai:    [ "ruby-openai", "~> 8.2.0", "openai" ]
+  openai:    [ "ruby-openai",    "~> 8.2.0", "openai" ]
 }
 
 def require_gem!(type, file_name)
@@ -32,12 +32,12 @@ module ActiveAgent
       include ParameterBuilder
 
       class GenerationProviderError < StandardError; end
-      attr_reader :client, :config, :prompt, :response, :access_token, :model_name
+      attr_reader :client, :config, :prompt, :response, :model_name
 
       def initialize(config)
-        @config = config
-        @prompt = nil
-        @response = nil
+        @config     = config
+        @prompt     = nil
+        @response   = nil
         @model_name = config["model"] if config
       end
 
@@ -45,8 +45,8 @@ module ActiveAgent
         raise NotImplementedError, "Subclasses must implement the 'generate' method"
       end
 
+      # Optional embedding support - override in providers that support it
       def embed(prompt)
-        # Optional embedding support - override in providers that support it
         raise NotImplementedError, "#{self.class.name} does not support embeddings"
       end
 

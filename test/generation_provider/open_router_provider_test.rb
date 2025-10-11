@@ -25,10 +25,10 @@ module ActiveAgent
       test "initializes with basic configuration" do
         provider = OpenRouterProvider.new(@base_config)
 
-        assert_equal "test_api_key", provider.instance_variable_get(:@access_token)
-        assert_equal "openai/gpt-4o", provider.instance_variable_get(:@model_name)
-        assert_equal "TestApp", provider.instance_variable_get(:@app_name)
-        assert_equal "https://test.app", provider.instance_variable_get(:@site_url)
+        assert_equal "test_api_key", provider.instance_variable_get(:@options).access_token
+        assert_equal "openai/gpt-4o", provider.instance_variable_get(:@options).model
+        assert_equal "TestApp", provider.instance_variable_get(:@options).app_name
+        assert_equal "https://test.app", provider.instance_variable_get(:@options).site_url
       end
 
       test "initializes with fallback models configuration" do
@@ -40,8 +40,8 @@ module ActiveAgent
         provider = OpenRouterProvider.new(config)
 
         assert_equal [ "anthropic/claude-3-opus", "google/gemini-pro" ],
-                     provider.instance_variable_get(:@fallback_models)
-        assert provider.instance_variable_get(:@enable_fallbacks)
+                     provider.instance_variable_get(:@options).models
+        assert provider.instance_variable_get(:@options).provider.allow_fallbacks
       end
 
       test "initializes with provider preferences" do
@@ -54,11 +54,11 @@ module ActiveAgent
         )
 
         provider = OpenRouterProvider.new(config)
-        prefs = provider.instance_variable_get(:@provider_preferences)
+        prefs = provider.instance_variable_get(:@options).provider
 
-        assert_equal [ "OpenAI", "Anthropic" ], prefs["order"]
-        assert prefs["require_parameters"]
-        assert_equal "deny", prefs["data_collection"]
+        assert_equal [ "OpenAI", "Anthropic" ], prefs.order
+        assert prefs.require_parameters
+        assert_equal "deny", prefs.data_collection
       end
 
       test "initializes with transforms" do
@@ -68,16 +68,15 @@ module ActiveAgent
 
         provider = OpenRouterProvider.new(config)
 
-        assert_equal [ "middle-out" ], provider.instance_variable_get(:@transforms)
+        assert_equal [ "middle-out" ], provider.instance_variable_get(:@options).transforms
       end
 
       test "sets correct OpenRouter headers" do
         provider = OpenRouterProvider.new(@base_config)
-        client = provider.instance_variable_get(:@client)
 
-        assert_not_nil client
+        assert_not_nil provider.client
         # The client should be configured with OpenRouter base URL
-        assert_equal "https://openrouter.ai/api/v1", client.instance_variable_get(:@uri_base)
+        assert_equal "https://openrouter.ai/api/v1", provider.client.instance_variable_get(:@uri_base)
       end
 
       test "supports_vision? returns true for vision models" do
@@ -279,7 +278,7 @@ module ActiveAgent
 
       test "defaults enable_fallbacks to true" do
         provider = OpenRouterProvider.new(@base_config)
-        assert provider.instance_variable_get(:@enable_fallbacks)
+        assert provider.instance_variable_get(:@options).provider&.allow_fallbacks
       end
 
       test "defaults track_costs to true" do
@@ -289,7 +288,7 @@ module ActiveAgent
 
       test "defaults route to fallback" do
         provider = OpenRouterProvider.new(@base_config)
-        assert_equal "fallback", provider.instance_variable_get(:@route)
+        assert_equal "fallback", provider.instance_variable_get(:@options).route
       end
 
       test "environment variables fallback for API key" do
@@ -299,7 +298,7 @@ module ActiveAgent
         config.delete("api_key")
 
         provider = OpenRouterProvider.new(config)
-        assert_equal "env_api_key", provider.instance_variable_get(:@access_token)
+        assert_equal "env_api_key", provider.instance_variable_get(:@options).access_token
       ensure
         ENV.delete("OPENROUTER_API_KEY")
       end
@@ -311,7 +310,7 @@ module ActiveAgent
         config.delete("api_key")
 
         provider = OpenRouterProvider.new(config)
-        assert_equal "env_access_token", provider.instance_variable_get(:@access_token)
+        assert_equal "env_access_token", provider.instance_variable_get(:@options).access_token
       ensure
         ENV.delete("OPENROUTER_ACCESS_TOKEN")
       end
