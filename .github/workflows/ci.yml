@@ -89,6 +89,8 @@ jobs:
         gemfile:
           - "gemfiles/anthropic_1.12.gemfile"
           - "gemfiles/anthropic_1.14.gemfile"
+          - "gemfiles/openai_0.34.gemfile"
+          - "gemfiles/openai_0.35.gemfile"
     steps:
     - uses: actions/checkout@v5
     - name: Install system deps
