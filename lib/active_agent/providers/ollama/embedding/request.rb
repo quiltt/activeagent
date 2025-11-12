@@ -63,23 +63,23 @@ module ActiveAgent
           # @option params [Integer] :seed delegated to options
           # @raise [ArgumentError] when parameters are invalid
           def initialize(**params)
-            # Apply defaults
+            # Step 1: Apply defaults
             params = apply_defaults(params)
 
-            # Validate presence of required params before normalization
+            # Step 2: Validate presence of required params before normalization
             raise ArgumentError, "model is required" unless params[:model]
             raise ArgumentError, "input is required" unless params[:input]
 
-            # Normalize parameters and split into OpenAI vs Ollama-specific
+            # Step 3: Normalize parameters and split into OpenAI vs Ollama-specific
             openai_params, @ollama_params = Transforms.normalize_params(params)
 
-            # Create gem model with OpenAI-compatible params
+            # Step 4: Create gem model with OpenAI-compatible params
             gem_model = ::OpenAI::Models::EmbeddingCreateParams.new(**openai_params)
 
-            # Delegate to the gem model
+            # Step 5: Delegate to the gem model
             super(gem_model)
           rescue ArgumentError => e
-            raise ArgumentError, "Invalid Ollama embedding request parameters: #{e.message}"
+            raise ArgumentError, "Invalid Ollama Embedding request parameters: #{e.message}"
           end
 
           # Serializes request for API submission

@@ -66,10 +66,20 @@ module ActiveAgent
 
           # Removes nil values from serialized request
           #
-          # @param serialized [Hash]
+          # @param serialized [Hash] serialized request
+          # @param defaults [Hash] default values to remove
+          # @param gem_object [Object] original gem object (unused but for consistency)
           # @return [Hash] cleaned request hash
-          def self.cleanup_serialized_request(serialized)
-            serialized.compact
+          def self.cleanup_serialized_request(serialized, defaults = {}, gem_object = nil)
+            # Remove nil values
+            cleaned = serialized.compact
+
+            # Remove default values
+            defaults.each do |key, value|
+              cleaned.delete(key) if cleaned[key] == value
+            end
+
+            cleaned
           end
         end
       end

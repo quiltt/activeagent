@@ -200,6 +200,26 @@ module ActiveAgent
                 message
               end
             end
+
+            # Cleans up serialized request for API submission
+            #
+            # Removes default values and simplifies input where possible.
+            #
+            # @param hash [Hash] serialized request
+            # @param defaults [Hash] default values to remove
+            # @param gem_object [Object] original gem object
+            # @return [Hash] cleaned request hash
+            def cleanup_serialized_request(hash, defaults, gem_object)
+              # Remove default values that shouldn't be in the request body
+              defaults.each do |key, value|
+                hash.delete(key) if hash[key] == value
+              end
+
+              # Simplify input when possible for cleaner API requests
+              hash[:input] = simplify_input(hash[:input]) if hash[:input]
+
+              hash
+            end
           end
         end
       end

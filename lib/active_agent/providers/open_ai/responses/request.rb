@@ -48,35 +48,35 @@ module ActiveAgent
           # @option params [Integer] :max_output_tokens
           # @raise [ArgumentError] when parameters are invalid
           def initialize(**params)
-            # Extract custom fields
+            # Step 1: Extract custom fields
             @stream = params[:stream]
             @response_format = params.delete(:response_format)
 
-            # Map common format 'messages' to OpenAI Responses 'input'
+            # Step 2: Map common format 'messages' to OpenAI Responses 'input'
             if params.key?(:messages)
               params[:input] = params.delete(:messages)
             end
 
-            # Join instructions array into string (like Chat API)
+            # Step 3: Join instructions array into string (like Chat API)
             if params[:instructions].is_a?(Array)
               params[:instructions] = params[:instructions].join("\n")
             end
 
-            # Map response_format to text parameter for Responses API
+            # Step 4: Map response_format to text parameter for Responses API
             if @response_format
               params[:text] = Responses::Transforms.normalize_response_format(@response_format)
             end
 
-            # Apply defaults
+            # Step 5: Apply defaults
             params = apply_defaults(params)
 
-            # Normalize input content for gem compatibility
+            # Step 6: Normalize input content for gem compatibility
             params[:input] = Responses::Transforms.normalize_input(params[:input]) if params[:input]
 
-            # Create gem model - delegates to OpenAI gem
+            # Step 7: Create gem model - delegates to OpenAI gem
             gem_model = ::OpenAI::Models::Responses::ResponseCreateParams.new(**params)
 
-            # Delegate all method calls to gem model
+            # Step 8: Delegate all method calls to gem model
             super(gem_model)
           rescue ArgumentError => e
             # Re-raise with more context
@@ -85,22 +85,12 @@ module ActiveAgent
 
           # Serializes request for API call
           #
-          # Removes default values for minimal request body and simplifies
-          # single-element input arrays to strings where possible.
+          # Uses gem's JSON serialization and delegates cleanup to Transforms module.
           #
           # @return [Hash] cleaned request hash
           def serialize
             hash = Responses::Transforms.gem_to_hash(__getobj__)
-
-            # Remove default values that shouldn't be in the request body
-            DEFAULTS.each do |key, value|
-              hash.delete(key) if hash[key] == value
-            end
-
-            # Simplify input when possible for cleaner API requests
-            hash[:input] = Responses::Transforms.simplify_input(hash[:input]) if hash[:input]
-
-            hash
+            Responses::Transforms.cleanup_serialized_request(hash, DEFAULTS, __getobj__)
           end
 
           # @return [Array, String, Hash, nil]

@@ -69,61 +69,42 @@ module ActiveAgent
         # @option params [Hash] :response_format custom field for JSON mode simulation
         # @raise [ArgumentError] when gem model validation fails
         def initialize(**params)
-          # Extract custom fields that gem doesn't support
+          # Step 1: Extract custom fields that gem doesn't support
           @response_format = params.delete(:response_format)
           @stream = params.delete(:stream)
 
-          # Map common format 'instructions' to Anthropic's 'system'
+          # Step 2: Map common format 'instructions' to Anthropic's 'system'
           if params.key?(:instructions)
             params[:system] = params.delete(:instructions)
           end
 
-          # Apply defaults
+          # Step 3: Apply defaults
           params = apply_defaults(params)
 
-          # Transform params for gem compatibility
+          # Step 4: Transform params for gem compatibility
           transformed = Transforms.normalize_params(params)
 
-          # Create gem model - this validates all parameters!
+          # Step 5: Create gem model - this validates all parameters!
           gem_model = ::Anthropic::Models::MessageCreateParams.new(**transformed)
 
-          # Delegate all method calls to gem model
+          # Step 6: Delegate all method calls to gem model
           super(gem_model)
         rescue ArgumentError => e
           # Re-raise with more context
           raise ArgumentError, "Invalid Anthropic request parameters: #{e.message}"
         end
 
-        # Serializes request for API call with content compression.
+        # Serializes request for API call.
         #
-        # Uses gem's JSON serialization, then removes response-only fields
-        # and compresses single text blocks to string shorthand for efficiency.
+        # Uses gem's JSON serialization and delegates cleanup to Transforms module.
         #
         # @return [Hash]
         def serialize
           # Use gem's JSON serialization (handles all nested objects)
           hash = Anthropic::Transforms.gem_to_hash(__getobj__)
 
-          # Clean up messages - remove response-only fields
-          if hash[:messages]
-            hash[:messages].each do |msg|
-              msg.delete(:id)
-              msg.delete(:model)
-              msg.delete(:stop_reason)
-              msg.delete(:stop_sequence)
-              msg.delete(:type)
-              msg.delete(:usage)
-            end
-          end
-
-          # Apply content compression for API efficiency
-          Transforms.compress_content(hash)
-
-          # Remove provider-internal fields that should not be in API request
-          hash.delete(:mcp_servers)   # Provider-level config, not API param
-          hash.delete(:stop_sequences) if hash[:stop_sequences] == []
-
-          hash
+          # Delegate cleanup to transforms module
+          Transforms.cleanup_serialized_request(hash, DEFAULTS, __getobj__)
         end
 
         # Accessor for system instructions.

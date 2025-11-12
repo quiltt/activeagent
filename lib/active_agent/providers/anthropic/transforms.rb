@@ -291,6 +291,45 @@ module ActiveAgent
             end
           end
 
+          # Cleans up serialized request for API submission.
+          #
+          # Removes response-only fields, applies content compression,
+          # removes provider-internal fields, and removes default values.
+          # Note: max_tokens is kept even if it matches default as Anthropic API requires it.
+          #
+          # @param hash [Hash] serialized request
+          # @param defaults [Hash] default values to remove
+          # @param gem_object [Object] original gem object (unused but for consistency)
+          # @return [Hash] cleaned request hash
+          def cleanup_serialized_request(hash, defaults, gem_object = nil)
+            # Remove response-only fields from messages
+            if hash[:messages]
+              hash[:messages].each do |msg|
+                msg.delete(:id)
+                msg.delete(:model)
+                msg.delete(:stop_reason)
+                msg.delete(:stop_sequence)
+                msg.delete(:type)
+                msg.delete(:usage)
+              end
+            end
+
+            # Apply content compression for API efficiency
+            compress_content(hash)
+
+            # Remove provider-internal fields that should not be in API request
+            hash.delete(:mcp_servers)   # Provider-level config, not API param
+            hash.delete(:stop_sequences) if hash[:stop_sequences] == []
+
+            # Remove default values (except max_tokens which is required by API)
+            defaults.each do |key, value|
+              next if key == :max_tokens  # Anthropic API requires max_tokens
+              hash.delete(key) if hash[key] == value
+            end
+
+            hash
+          end
+
           private
 
           # Converts single text block to string.

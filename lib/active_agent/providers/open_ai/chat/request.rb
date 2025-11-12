@@ -69,19 +69,19 @@ module ActiveAgent
           # @option params [Array] :tools available tool definitions
           # @raise [ArgumentError] when parameters are invalid
           def initialize(**params)
-            # Extract stream flag
+            # Step 1: Extract stream flag
             @stream = params[:stream]
 
-            # Apply defaults
+            # Step 2: Apply defaults
             params = apply_defaults(params)
 
-            # Normalize all parameters (instructions, messages, response_format)
+            # Step 3: Normalize all parameters (instructions, messages, response_format)
             params = Chat::Transforms.normalize_params(params)
 
-            # Create gem model - this validates all parameters!
+            # Step 4: Create gem model - this validates all parameters!
             gem_model = ::OpenAI::Models::Chat::CompletionCreateParams.new(**params)
 
-            # Delegate all method calls to gem model
+            # Step 5: Delegate all method calls to gem model
             super(gem_model)
           rescue ArgumentError => e
             # Re-raise with more context

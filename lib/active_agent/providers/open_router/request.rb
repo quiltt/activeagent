@@ -71,20 +71,20 @@ module ActiveAgent
         # @option params [Float] :repetition_penalty repetition penalty
         # @raise [ArgumentError] when parameters are invalid
         def initialize(**params)
-          # Extract stream flag
+          # Step 1: Extract stream flag
           @stream = params[:stream]
 
-          # Apply defaults
+          # Step 2: Apply defaults
           params = apply_defaults(params)
 
-          # Normalize parameters and split into OpenAI vs OpenRouter-specific
+          # Step 3: Normalize parameters and split into OpenAI vs OpenRouter-specific
           # This handles response_format special logic for structured output
           openai_params, @openrouter_params = Transforms.normalize_params(params)
 
-          # Create gem model with OpenAI-compatible params
+          # Step 4: Create gem model with OpenAI-compatible params
           gem_model = ::OpenAI::Models::Chat::CompletionCreateParams.new(**openai_params)
 
-          # Delegate to the gem model
+          # Step 5: Delegate to the gem model
           super(gem_model)
         rescue ArgumentError => e
           raise ArgumentError, "Invalid OpenRouter request parameters: #{e.message}"

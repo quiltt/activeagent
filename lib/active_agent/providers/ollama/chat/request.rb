@@ -65,26 +65,26 @@ module ActiveAgent
           # @option params [Boolean] :raw raw prompt mode
           # @raise [ArgumentError] when parameters are invalid
           def initialize(**params)
-            # Extract stream flag
+            # Step 1: Extract stream flag
             @stream = params[:stream]
 
-            # Apply defaults
+            # Step 2: Apply defaults
             params = apply_defaults(params)
 
-            # Normalize parameters and split into OpenAI vs Ollama-specific
+            # Step 3: Normalize parameters and split into OpenAI vs Ollama-specific
             openai_params, @ollama_params = Transforms.normalize_params(params)
 
-            # Validate Ollama-specific parameters
+            # Step 4: Validate Ollama-specific parameters
             validate_format(@ollama_params[:format]) if @ollama_params[:format]
             validate_options(@ollama_params[:options]) if @ollama_params[:options]
 
-            # Create gem model with OpenAI-compatible params
+            # Step 5: Create gem model with OpenAI-compatible params
             gem_model = ::OpenAI::Models::Chat::CompletionCreateParams.new(**openai_params)
 
-            # Delegate to the gem model
+            # Step 6: Delegate to the gem model
             super(gem_model)
           rescue ArgumentError => e
-            raise ArgumentError, "Invalid Ollama request parameters: #{e.message}"
+            raise ArgumentError, "Invalid Ollama Chat request parameters: #{e.message}"
           end
 
           # Serializes request for API submission
