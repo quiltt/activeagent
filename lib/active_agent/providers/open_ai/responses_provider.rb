@@ -1,5 +1,6 @@
 require_relative "_base"
 require_relative "responses/_types"
+require_relative "responses/transforms"
 
 module ActiveAgent
   module Providers
@@ -55,14 +56,14 @@ module ActiveAgent
 
           # -> -> -> Content Text Append
           when :"response.output_text.delta"
-            message = message_stack.find { _1[:id] == api_response_event[:item_id] }
-            message[:content] += api_response_event[:delta]
-            broadcast_stream_update(message, api_response_event[:delta])
+            message = message_stack.find { _1[:id] == api_response_event.item_id }
+            message[:content] += api_response_event.delta
+            broadcast_stream_update(message, api_response_event.delta)
 
           # -> -> -> Content Text Completed [Full Text]
           when :"response.output_text.done"
-            message = message_stack.find { _1[:id] == api_response_event[:item_id] }
-            message[:content] = api_response_event[:text]
+            message = message_stack.find { _1[:id] == api_response_event.item_id }
+            message[:content] = api_response_event.text
             broadcast_stream_update(message, nil) # Don't double send content
 
           # -> -> -> Content Function Call Append
@@ -81,7 +82,7 @@ module ActiveAgent
             # Once we are finished, close out and run tooling callbacks (Recursive)
             process_prompt_finished
           else
-            fail "Unexpected Response Chunk Type: #{type}"
+            raise "Unexpected Response Chunk Type: #{api_response_event.type}"
           end
         end
 
@@ -93,11 +94,12 @@ module ActiveAgent
           case api_response_event.item.type
           when :message
             # PATCH: API returns an empty array instead of empty string due to a bug in their serialization
-            message_stack << { content: "" }.merge(api_response_event.item.to_h.compact_blank)
+            item_hash = Responses::Transforms.gem_to_hash(api_response_event.item).compact_blank
+            message_stack << { content: "" }.merge(item_hash)
           when :function_call
             # No-Op: Wait for FC to Land (-> response.output_item.done)
           else
-            fail "Unexpected Item Type: #{api_response_event.item.type}"
+            raise "Unexpected Item Type: #{api_response_event.item.type}"
           end
         end
 
@@ -110,9 +112,10 @@ module ActiveAgent
           when :message
             # No-Op: Message Up to Date
           when :function_call
-            message_stack << api_response_event.item
+            item_hash = Responses::Transforms.gem_to_hash(api_response_event.item)
+            message_stack << item_hash
           else
-            fail "Unexpected Item Type: #{api_response_event.item.type}"
+            raise "Unexpected Item Type: #{api_response_event.item.type}"
           end
         end
 
@@ -124,12 +127,14 @@ module ActiveAgent
           api_function_calls.each do |api_function_call|
             instrument("tool_execution.provider.active_agent", tool_name: api_function_call[:name])
 
-            message = Responses::Requests::Inputs::FunctionCallOutput.new(
+            # Create native gem input item for function call output
+            message = ::OpenAI::Models::Responses::ResponseInputItem::FunctionCallOutput.new(
               call_id: api_function_call[:call_id],
               output:  process_tool_call_function(api_function_call).to_json
             )
 
-            message_stack.push(message.serialize)
+            # Convert to hash for message_stack
+            message_stack.push(Responses::Transforms.gem_to_hash(message))
           end
         end
 
@@ -141,7 +146,7 @@ module ActiveAgent
           return unless api_response
 
           # Convert native gem output array to hash array for message_stack
-          api_response.output.map { |output| JSON.parse(output.to_json, symbolize_names: true) }
+          api_response.output.map { |output| Responses::Transforms.gem_to_hash(output) }
         end
 
         # Extracts function calls from message stack.
