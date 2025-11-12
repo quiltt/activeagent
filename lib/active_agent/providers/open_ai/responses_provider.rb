@@ -5,10 +5,10 @@ require_relative "responses/transforms"
 module ActiveAgent
   module Providers
     module OpenAI
-      # Handles OpenAI's Responses API with improved streaming and structured function calling.
+      # Provider implementation for OpenAI's Responses API
       #
-      # Uses the newer responses endpoint instead of the chat completions endpoint
-      # for more reliable streaming and better structured interactions with function calls.
+      # Uses the responses endpoint for improved streaming and structured function
+      # calling compared to the chat completions endpoint.
       #
       # @see Base
       # @see https://platform.openai.com/docs/api-reference/responses
@@ -30,15 +30,23 @@ module ActiveAgent
           client.responses
         end
 
-        # Processes streaming response chunks from the Responses API.
+        # Processes streaming response chunks from the Responses API
         #
-        # Handles event types: response.created, response.output_item.added,
-        # response.output_text.delta, response.function_call_arguments.delta,
-        # and response.completed. Updates message stack and broadcasts streaming
-        # updates to listeners.
+        # Event types handled:
+        # - `:"response.created"`, `:"response.in_progress"` - response lifecycle
+        # - `:"response.output_item.added"` - message or function call added
+        # - `:"response.content_part.added"` - content part started
+        # - `:"response.output_text.delta"` - incremental text updates
+        # - `:"response.output_text.done"` - complete text
+        # - `:"response.function_call_arguments.delta"` - function argument updates
+        # - `:"response.function_call_arguments.done"` - complete function arguments
+        # - `:"response.content_part.done"` - content part completed
+        # - `:"response.output_item.done"` - message or function call completed
+        # - `:"response.completed"` - response finished
         #
-        # @param api_response_event [Hash] streaming response chunk with :type key
+        # @param api_response_event [Hash] streaming chunk with :type key
         # @return [void]
+        # @see Base#process_stream_chunk
         def process_stream_chunk(api_response_event)
           instrument("stream_chunk_processing.provider.active_agent", chunk_type: api_response_event.type)
 
@@ -86,7 +94,13 @@ module ActiveAgent
           end
         end
 
-        # Processes output item added events from streaming response.
+        # Processes output item added events from streaming response
+        #
+        # Handles message and function_call item types. For messages, adds to stack
+        # with empty content. For function calls, waits for completion event.
+        #
+        # Required because API returns empty array instead of empty string for
+        # initial message content due to serialization bug.
         #
         # @param api_response_event [Hash] response chunk with :item key
         # @return [void]
@@ -103,7 +117,10 @@ module ActiveAgent
           end
         end
 
-        # Processes output item completion events from streaming response.
+        # Processes output item completion events from streaming response
+        #
+        # For function calls, adds completed item to message stack.
+        # For messages, no action needed as content already updated via delta events.
         #
         # @param api_response_event [Hash] response chunk with completed :item
         # @return [void]
@@ -119,10 +136,11 @@ module ActiveAgent
           end
         end
 
-        # Executes function calls and creates output messages for conversation continuation.
+        # Executes function calls and creates output messages for conversation continuation
         #
         # @param api_function_calls [Array<Hash>] function calls with :call_id and :name keys
         # @return [void]
+        # @see Base#process_function_calls
         def process_function_calls(api_function_calls)
           api_function_calls.each do |api_function_call|
             instrument("tool_execution.provider.active_agent", tool_name: api_function_call[:name])

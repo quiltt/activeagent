@@ -6,28 +6,27 @@ module ActiveAgent
   module Providers
     module OpenAI
       module Responses
-        # Transforms for working with native OpenAI Responses API gem objects.
+        # Provides transformation methods for normalizing response parameters
+        # to OpenAI gem's native format
         #
-        # Provides helper methods for converting between gem objects and hashes,
-        # normalizing input formats, and applying API-specific transformations.
+        # Handles input normalization, message conversion, and response format
+        # transformation for the Responses API.
         module Transforms
           class << self
-            # Converts gem model object to hash via JSON round-trip.
+            # Converts gem model object to hash via JSON round-trip
             #
-            # This ensures proper nested serialization and symbolic keys.
-            #
-            # @param gem_object [Object] any object responding to .to_json
-            # @return [Hash]
+            # @param gem_object [Object]
+            # @return [Hash] with symbolized keys
             def gem_to_hash(gem_object)
               JSON.parse(gem_object.to_json, symbolize_names: true)
             end
 
-            # Simplifies input when possible for cleaner API requests.
+            # Simplifies input for cleaner API requests
             #
-            # Unwraps single-element arrays to just the element:
-            # - Single string: `["text"]` → `"text"`
-            # - Single input_text content: `[{type: "input_text", text: "..."}]` → `"..."`
-            # - Single user message with string content: `[{role: "user", content: "..."}]` → `"..."`
+            # Unwraps single-element arrays:
+            # - `["text"]` → `"text"`
+            # - `[{type: "input_text", text: "..."}]` → `"..."`
+            # - `[{role: "user", content: "..."}]` → `"..."`
             #
             # @param input [Array, String, Hash]
             # @return [String, Array, Hash]
@@ -59,10 +58,10 @@ module ActiveAgent
               input
             end
 
-            # Normalizes response_format to OpenAI Responses API text parameter.
+            # Normalizes response_format to OpenAI Responses API text parameter
             #
-            # Maps common response_format structures to the Responses API format.
-            # Returns a ResponseTextConfig object to preserve proper nesting.
+            # Maps common response_format structures to Responses API format.
+            # Returns ResponseTextConfig object to preserve proper nesting.
             #
             # @param format [Hash, Symbol, String]
             # @return [OpenAI::Models::Responses::ResponseTextConfig]
@@ -100,10 +99,13 @@ module ActiveAgent
               ::OpenAI::Models::Responses::ResponseTextConfig.new(**text_hash)
             end
 
-            # Normalizes input/messages to gem-compatible format.
+            # Normalizes input/messages to gem-compatible format
             #
-            # Converts our custom message objects to plain hashes.
-            # Handles strings, single hashes (wrapped in array), and arrays.
+            # Handles various input formats:
+            # - `"text"` → string (passthrough)
+            # - `{role: "user", content: "..."}` → wrapped in array
+            # - `[{text: "..."}, {image: "url"}]` → wrapped as user message with content array
+            # - `["msg1", "msg2"]` → array of user messages
             #
             # @param input [String, Hash, Array, Object]
             # @return [String, Array<Hash>]
@@ -143,10 +145,15 @@ module ActiveAgent
               input.map { |item| normalize_message(item, context: :input) }
             end
 
-            # Normalizes a single message to hash format.
+            # Normalizes a single message to hash format
+            #
+            # Handles shorthand formats:
+            # - `{text: "..."}` → user message
+            # - `{image: "url"}` → input_image content part
+            # - `{document: "url"}` → input_file content part
             #
             # @param message [Hash, String, Object]
-            # @param context [Symbol] :input for top-level input items, :content for content items
+            # @param context [Symbol] :input for messages, :content for content parts
             # @return [Hash, String]
             def normalize_message(message, context: :content)
               # If it's our custom model object, serialize it

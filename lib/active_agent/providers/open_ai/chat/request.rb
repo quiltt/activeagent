@@ -8,46 +8,36 @@ module ActiveAgent
   module Providers
     module OpenAI
       module Chat
-        # Request wrapper that delegates to OpenAI gem model.
+        # Wraps OpenAI gem's CompletionCreateParams with normalization
         #
-        # Uses SimpleDelegator to wrap ::OpenAI::Models::Chat::CompletionCreateParams,
-        # eliminating the need to maintain duplicate attribute definitions while
-        # providing convenience transformations.
+        # Delegates to OpenAI::Models::Chat::CompletionCreateParams while providing
+        # parameter normalization and shorthand format support via the Transforms module.
         #
-        # All standard OpenAI Chat API fields are automatically available via delegation:
-        # - model, messages, temperature, max_tokens, max_completion_tokens
-        # - top_p, frequency_penalty, presence_penalty
-        # - tools, tool_choice, response_format, stream_options
-        # - audio, prediction, metadata, modalities
-        # - service_tier, store, parallel_tool_calls, reasoning_effort, verbosity
-        # - stop, seed, logit_bias, logprobs, top_logprobs
-        # - prompt_cache_key, safety_identifier, user
-        # - web_search_options
-        # - function_call, functions (deprecated)
+        # All OpenAI Chat API fields are available via delegation:
+        # model, messages, temperature, max_tokens, max_completion_tokens, top_p,
+        # frequency_penalty, presence_penalty, tools, tool_choice, response_format,
+        # stream_options, audio, prediction, metadata, modalities, service_tier, store,
+        # parallel_tool_calls, reasoning_effort, verbosity, stop, seed, logit_bias,
+        # logprobs, top_logprobs, prompt_cache_key, safety_identifier, user,
+        # web_search_options, function_call, functions
         #
         # @example Basic usage
         #   request = Request.new(
         #     model: "gpt-4o",
         #     messages: [{role: "user", content: "Hello"}]
         #   )
-        #   request.model       #=> "gpt-4o"
-        #   request.temperature #=> 1 (default)
         #
-        # @example With transformations
-        #   # String messages are automatically normalized
-        #   request = Request.new(
-        #     model: "gpt-4o",
-        #     messages: "Hello"
-        #   )
-        #   # Internally becomes: [{role: "user", content: "Hello"}]
+        # @example String message normalization
+        #   Request.new(model: "gpt-4o", messages: "Hello")
+        #   # Normalized to: [{role: "user", content: "Hello"}]
         #
-        # @example Common format compatibility
-        #   request = Request.new(
+        # @example Instructions support
+        #   Request.new(
         #     model: "gpt-4o",
         #     messages: [{role: "user", content: "Hi"}],
         #     instructions: ["You are helpful", "Be concise"]
         #   )
-        #   # instructions become developer messages
+        #   # instructions converted to developer messages and prepended
         class Request < SimpleDelegator
           # Default parameter values applied during initialization
           DEFAULTS = {
@@ -67,16 +57,17 @@ module ActiveAgent
           # @return [Boolean, nil]
           attr_reader :stream
 
-          # Initializes request with field mapping and normalization.
+          # Creates a new chat completion request
           #
-          # Maps common format fields (instructions) and normalizes messages.
-          #
-          # @param params [Hash]
-          # @option params [String] :model required
-          # @option params [Array, String, Hash] :messages required
+          # @param params [Hash] request parameters
+          # @option params [String] :model required model identifier
+          # @option params [Array, String, Hash] :messages required conversation messages
           # @option params [Array<String>, String] :instructions system/developer prompts
           # @option params [Hash, String, Symbol] :response_format
-          # @raise [ArgumentError] when gem model initialization fails
+          # @option params [Float] :temperature (1) sampling temperature 0-2
+          # @option params [Integer] :max_tokens maximum tokens to generate
+          # @option params [Array] :tools available tool definitions
+          # @raise [ArgumentError] when parameters are invalid
           def initialize(**params)
             # Extract stream flag
             @stream = params[:stream]
@@ -97,12 +88,12 @@ module ActiveAgent
             raise ArgumentError, "Invalid OpenAI Chat request parameters: #{e.message}"
           end
 
-          # Serializes request for API call.
+          # Serializes request for API call
           #
-          # Uses gem's JSON serialization, removes default values to keep request
-          # body minimal, and simplifies messages where possible.
+          # Uses gem's JSON serialization, removes default values for minimal
+          # request body, and simplifies messages where possible.
           #
-          # @return [Hash]
+          # @return [Hash] cleaned request hash
           def serialize
             # Use gem's JSON serialization (handles all nested objects)
             hash = Chat::Transforms.gem_to_hash(__getobj__)
@@ -111,14 +102,12 @@ module ActiveAgent
             Chat::Transforms.cleanup_serialized_request(hash, DEFAULTS, __getobj__)
           end
 
-          # Accessor for messages.
-          #
           # @return [Array<Hash>, nil]
           def messages
             __getobj__.instance_variable_get(:@data)[:messages]
           end
 
-          # Sets messages with normalization.
+          # Sets messages with normalization
           #
           # @param value [Array, String, Hash]
           # @return [void]
@@ -127,7 +116,7 @@ module ActiveAgent
             __getobj__.instance_variable_get(:@data)[:messages] = normalized_value
           end
 
-          # Alias for messages (common format compatibility).
+          # Alias for messages (common format compatibility)
           #
           # @return [Array<Hash>, nil]
           def message
@@ -135,13 +124,14 @@ module ActiveAgent
           end
 
           # @param value [Array, String, Hash]
+          # @return [void]
           def message=(value)
             self.messages = value
           end
 
-          # Sets instructions as developer messages (common format compatibility).
+          # Sets instructions as developer messages
           #
-          # Prepends developer messages to the messages array.
+          # Prepends developer messages to the messages array for common format compatibility.
           #
           # @param values [Array<String>, String]
           # @return [void]

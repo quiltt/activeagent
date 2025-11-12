@@ -6,11 +6,13 @@ module ActiveAgent
   module Providers
     module OpenAI
       module Responses
-        # Wraps OpenAI Responses API request parameters with field mapping and normalization.
+        # Wraps OpenAI gem's ResponseCreateParams with field mapping and normalization
         #
-        # Uses SimpleDelegator to delegate to OpenAI::Models::Responses::ResponseCreateParams
-        # while providing compatibility layer for common format fields (messages→input,
-        # response_format→text) and content normalization.
+        # Delegates to OpenAI::Models::Responses::ResponseCreateParams while providing
+        # compatibility layer for common format fields and content normalization:
+        # - `messages` → `input`
+        # - `response_format` → `text` (via ResponseTextConfig)
+        # - Instructions array joined to string
         class Request < SimpleDelegator
           # Default parameter values applied during initialization
           DEFAULTS = {
@@ -30,21 +32,21 @@ module ActiveAgent
           # @return [Hash, nil]
           attr_reader :response_format
 
-          # Initializes request with field mapping and normalization.
+          # Creates a new response creation request
           #
           # Maps common format fields to Responses API format:
-          # - messages → input
-          # - response_format → text (via ResponseTextConfig)
-          # - instructions array joined to string
+          # - `messages` → `input`
+          # - `response_format` → `text` parameter
+          # - Instructions array → joined string
           #
-          # @param params [Hash]
-          # @option params [String] :model
+          # @param params [Hash] request parameters
+          # @option params [String] :model required model identifier
           # @option params [Array, String, Hash] :input messages or content
-          # @option params [Array, String, Hash] :messages alternative to :input
+          # @option params [Array, String, Hash] :messages alternative to :input (mapped automatically)
           # @option params [Hash, String, Symbol] :response_format
           # @option params [Array<String>, String] :instructions
           # @option params [Integer] :max_output_tokens
-          # @raise [ArgumentError] when gem model initialization fails
+          # @raise [ArgumentError] when parameters are invalid
           def initialize(**params)
             # Extract custom fields
             @stream = params[:stream]
@@ -81,12 +83,12 @@ module ActiveAgent
             raise ArgumentError, "Invalid OpenAI Responses request parameters: #{e.message}"
           end
 
-          # Serializes request for API call.
+          # Serializes request for API call
           #
-          # Removes default values to keep request body minimal and simplifies
+          # Removes default values for minimal request body and simplifies
           # single-element input arrays to strings where possible.
           #
-          # @return [Hash]
+          # @return [Hash] cleaned request hash
           def serialize
             hash = Responses::Transforms.gem_to_hash(__getobj__)
 
@@ -106,9 +108,7 @@ module ActiveAgent
             __getobj__.instance_variable_get(:@data)[:input]
           end
 
-          # Sets input messages with normalization.
-          #
-          # Converts strings to message objects and ensures proper format.
+          # Sets input messages with normalization
           #
           # @param value [Array, String, Hash]
           # @return [void]

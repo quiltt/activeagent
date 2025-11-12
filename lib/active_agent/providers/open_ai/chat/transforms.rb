@@ -6,29 +6,29 @@ module ActiveAgent
   module Providers
     module OpenAI
       module Chat
-        # Transforms for working with native OpenAI Chat API gem objects.
+        # Provides transformation methods for normalizing chat parameters
+        # to OpenAI gem's native format
         #
-        # Provides helper methods for converting between gem objects and hashes,
-        # normalizing input formats, and applying API-specific transformations.
+        # Handles message normalization, shorthand formats, instructions mapping,
+        # and response format conversion for the Chat Completions API.
         module Transforms
           class << self
-            # Converts gem model object to hash via JSON round-trip.
+            # Converts gem model object to hash via JSON round-trip
             #
-            # This ensures proper nested serialization and symbolic keys.
-            #
-            # @param gem_object [Object] any object responding to .to_json
-            # @return [Hash]
+            # @param gem_object [Object]
+            # @return [Hash] with symbolized keys
             def gem_to_hash(gem_object)
               JSON.parse(gem_object.to_json, symbolize_names: true)
             end
 
-            # Normalizes all request parameters for OpenAI Chat API.
+            # Normalizes all request parameters for OpenAI Chat API
             #
-            # Handles instructions mapping, message normalization, and response_format.
-            # This is the main entry point for parameter transformation.
+            # Handles instructions mapping to developer messages, message normalization,
+            # and response_format conversion. This is the main entry point for parameter
+            # transformation.
             #
             # @param params [Hash]
-            # @return [Hash]
+            # @return [Hash] normalized parameters
             def normalize_params(params)
               params = params.dup
 
@@ -47,15 +47,15 @@ module ActiveAgent
               params
             end
 
-            # Normalizes messages to OpenAI Chat API format using gem message classes.
+            # Normalizes messages to OpenAI Chat API format using gem message classes
             #
             # Handles various input formats:
-            # - Strings → UserMessageParam
-            # - Arrays of messages (may contain strings or hashes)
-            # - Merges consecutive same-role messages
+            # - `"text"` → UserMessageParam
+            # - `[{role: "user", content: "..."}]` → array of message params
+            # - Merges consecutive same-role messages into single message
             #
-            # @param messages [Array, String, Hash]
-            # @return [Array<OpenAI::Models::Chat::ChatCompletionMessageParam>]
+            # @param messages [Array, String, Hash, nil]
+            # @return [Array<OpenAI::Models::Chat::ChatCompletionMessageParam>, nil]
             def normalize_messages(messages)
               case messages
               when String
@@ -85,14 +85,14 @@ module ActiveAgent
               end
             end
 
-            # Normalizes a single message to proper gem message param class.
+            # Normalizes a single message to proper gem message param class
             #
-            # Handles various shorthand formats:
-            # - String → user message
-            # - { text: "..." } → user message with content
-            # - { role: "...", text: "..." } → message with role and content
-            # - { image: "..." } → user message with image content part
-            # - { role: "...", content: "..." } → standard format
+            # Handles shorthand formats:
+            # - `"text"` → user message
+            # - `{text: "..."}` → user message
+            # - `{role: "system", text: "..."}` → system message
+            # - `{image: "url"}` → user message with image content part
+            # - `{text: "...", image: "url"}` → user message with text and image parts
             #
             # @param message [String, Hash, OpenAI::Models::Chat::ChatCompletionMessageParam]
             # @return [OpenAI::Models::Chat::ChatCompletionMessageParam]
@@ -137,12 +137,13 @@ module ActiveAgent
               end
             end
 
-            # Creates the appropriate gem message param class for the given role.
+            # Creates the appropriate gem message param class for the given role
             #
-            # @param role [String]
+            # @param role [String] message role (developer, system, user, assistant, tool, function)
             # @param content [String, Array, Hash, nil]
             # @param extra_params [Hash] additional parameters (tool_call_id, name, etc.)
             # @return [OpenAI::Models::Chat::ChatCompletionMessageParam]
+            # @raise [ArgumentError] when role is unknown
             def create_message_param(role, content, extra_params = {})
               params = { role: role }
               params[:content] = normalize_content(content) if content
@@ -166,12 +167,11 @@ module ActiveAgent
               end
             end
 
-            # Normalizes message content to Chat API format.
-            #
-            # Handles strings, arrays of content parts, and hashes.
+            # Normalizes message content to Chat API format
             #
             # @param content [String, Array, Hash, nil]
             # @return [String, Array, nil]
+            # @raise [ArgumentError] when content type is invalid
             def normalize_content(content)
               case content
               when String
@@ -188,10 +188,13 @@ module ActiveAgent
               end
             end
 
-            # Normalizes a single content part.
+            # Normalizes a single content part
+            #
+            # Converts strings to proper content part format with type and text keys.
             #
             # @param part [Hash, String]
-            # @return [Hash, String]
+            # @return [Hash] content part with symbolized keys
+            # @raise [ArgumentError] when part type is invalid
             def normalize_content_part(part)
               case part
               when Hash
@@ -203,11 +206,14 @@ module ActiveAgent
               end
             end
 
-            # Merges two content values (for consecutive same-role messages).
+            # Merges two content values for consecutive same-role messages
+            #
+            # Preserves multiple text parts and mixed content as array structure
+            # rather than concatenating strings.
             #
             # @param content1 [String, Array, nil]
             # @param content2 [String, Array, nil]
-            # @return [String, Array]
+            # @return [Array] merged content parts
             def merge_content(content1, content2)
               # Convert to arrays for consistent handling
               arr1 = content_to_array(content1)
@@ -220,10 +226,10 @@ module ActiveAgent
               merged
             end
 
-            # Converts content to array format for merging.
+            # Converts content to array format for merging
             #
             # @param content [String, Array, nil]
-            # @return [Array]
+            # @return [Array<Hash>] content parts with type and text keys
             def content_to_array(content)
               case content
               when String
@@ -237,11 +243,11 @@ module ActiveAgent
               end
             end
 
-            # Simplifies messages for cleaner API requests.
+            # Simplifies messages for cleaner API requests
             #
-            # Converts gem message objects to hashes and simplifies content where possible:
+            # Converts gem message objects to hashes and simplifies content:
             # - Single text content arrays → strings
-            # - Empty arrays → removed
+            # - Empty content arrays → removed
             #
             # @param messages [Array]
             # @return [Array<Hash>]
@@ -267,12 +273,10 @@ module ActiveAgent
               end
             end
 
-            # Normalizes response_format to OpenAI Chat API format.
-            #
-            # Handles various input formats and converts to proper structure.
+            # Normalizes response_format to OpenAI Chat API format
             #
             # @param format [Hash, Symbol, String]
-            # @return [Hash]
+            # @return [Hash] normalized response format
             def normalize_response_format(format)
               case format
               when Hash
@@ -303,13 +307,14 @@ module ActiveAgent
               end
             end
 
-            # Normalizes instructions to developer message format.
+            # Normalizes instructions to developer message format
             #
             # Converts instructions into developer messages with proper content structure.
-            # Multiple instructions become content parts in a single developer message.
+            # Multiple instructions become content parts in a single developer message
+            # rather than separate messages.
             #
             # @param instructions [Array<String>, String]
-            # @return [Array<Hash>]
+            # @return [Array<Hash>] developer messages
             def normalize_instructions(instructions)
               instructions_array = Array(instructions)
 
@@ -326,14 +331,15 @@ module ActiveAgent
               end
             end
 
-            # Cleans up serialized hash for API request.
+            # Cleans up serialized hash for API request
             #
-            # Removes default values and handles special cases like web_search_options.
+            # Removes default values, simplifies messages, and handles special cases
+            # like web_search_options (which requires empty hash to enable).
             #
             # @param hash [Hash] serialized request hash
             # @param defaults [Hash] default values to remove
             # @param gem_object [Object] original gem object for checking values
-            # @return [Hash]
+            # @return [Hash] cleaned request hash
             def cleanup_serialized_request(hash, defaults, gem_object)
               # Remove default values that shouldn't be in the request body
               defaults.each do |key, value|
