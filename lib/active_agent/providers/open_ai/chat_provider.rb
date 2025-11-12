@@ -104,12 +104,16 @@ module ActiveAgent
               fail "Unexpected Tool Call Type: #{api_function_call[:type]}"
             end
 
-            message = Chat::Requests::Messages::Tool.new(
+            # Create tool message using gem's message param class
+            message = ::OpenAI::Models::Chat::ChatCompletionToolMessageParam.new(
+              role: "tool",
               tool_call_id: api_function_call[:id],
               content: content.to_json
             )
 
-            message_stack.push(message.serialize)
+            # Serialize and push to message stack
+            message_hash = Chat::Transforms.gem_to_hash(message)
+            message_stack.push(message_hash)
           end
         end
 
