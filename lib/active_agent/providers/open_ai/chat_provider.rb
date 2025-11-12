@@ -115,13 +115,16 @@ module ActiveAgent
 
         # Extracts messages from the completed API response.
         #
-        # @param api_response [Hash]
+        # @param api_response [OpenAI::Models::Chat::ChatCompletion]
         # @return [Array<Hash>, nil] single-element array with message or nil if no message
         # @see Base#process_prompt_finished_extract_messages
         def process_prompt_finished_extract_messages(api_response)
-          api_message = api_response&.dig(:choices, 0, :message)
+          return unless api_response
 
-          [ api_message ] if api_message
+          api_message = api_response.choices[0].message
+          message = JSON.parse(api_message.to_json, symbolize_names: true)
+
+          [ message ]
         end
 
         # Extracts function calls from the last message in the stack.

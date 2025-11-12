@@ -135,10 +135,13 @@ module ActiveAgent
 
         # Extracts messages from completed API response.
         #
-        # @param api_response [Hash] completed API response
-        # @return [Array, nil] output array from response[:output] or nil
+        # @param api_response [OpenAI::Models::Responses::Response]
+        # @return [Array, nil] output array from response.output or nil
         def process_prompt_finished_extract_messages(api_response)
-          api_response&.dig(:output)
+          return unless api_response
+
+          # Convert native gem output array to hash array for message_stack
+          api_response.output.map { |output| JSON.parse(output.to_json, symbolize_names: true) }
         end
 
         # Extracts function calls from message stack.
