@@ -163,6 +163,20 @@ response.usage.reasoning_tokens   # OpenAI o1 models
 response.usage.service_tier       # Anthropic
 ```
 
+**Enhanced Instrumentation for APM Integration**
+- Unified event structure: `prompt.active_agent` and `embed.active_agent` (top-level) plus `prompt.provider.active_agent` and `embed.provider.active_agent` (per-API-call)
+- Event payloads include comprehensive data for monitoring tools (New Relic, DataDog, etc.):
+  - Request parameters: `model`, `temperature`, `max_tokens`, `top_p`, `stream`, `message_count`, `has_tools`
+  - Usage data: `input_tokens`, `output_tokens`, `total_tokens`, `cached_tokens`, `reasoning_tokens`, `audio_tokens`, `cache_creation_tokens` (critical for cost tracking)
+  - Response metadata: `finish_reason`, `response_model`, `response_id`, `embedding_count`
+- Top-level events report cumulative usage across all API calls in multi-turn conversations
+- Provider-level events report per-call usage for granular tracking
+
+**Multi-Turn Usage Tracking**
+- `response.usage` now returns cumulative token counts across all API calls during tool calling
+- New `response.usages` array contains individual usage objects from each API call
+- `Usage` objects support addition: `usage1 + usage2` for combining statistics
+
 **Provider Enhancements**
 - OpenAI Responses API: `api: :responses` or `api: :chat`
 - Anthropic JSON object mode with automatic extraction

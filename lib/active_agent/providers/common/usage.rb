@@ -5,14 +5,11 @@ require "active_agent/providers/common/model"
 module ActiveAgent
   module Providers
     module Common
-      # Common usage statistics model that normalizes token usage across all providers.
+      # Normalizes token usage statistics across AI providers.
       #
-      # This class provides a unified interface for accessing token usage and performance
-      # metrics regardless of the underlying AI provider (OpenAI, Anthropic, Ollama, etc.).
-      # Each provider returns usage data in different formats with different field names,
-      # but this model normalizes them into a consistent structure.
-      #
-      # @note This model automatically calculates +total_tokens+ if not provided by the provider
+      # Providers return usage data in different formats with different field names.
+      # This model normalizes them into a consistent structure, automatically calculating
+      # +total_tokens+ if not provided.
       #
       # @example Accessing normalized usage data
       #   usage = response.normalized_usage
@@ -31,8 +28,6 @@ module ActiveAgent
       # @see https://github.com/ollama/ollama/blob/main/docs/api.md Ollama API
       class Usage < BaseModel
         # @!attribute [rw] input_tokens
-        #   Number of tokens in the input/prompt.
-        #
         #   Normalized from:
         #   - OpenAI Chat/Embeddings: prompt_tokens
         #   - OpenAI Responses API: input_tokens
@@ -40,12 +35,10 @@ module ActiveAgent
         #   - Ollama: prompt_eval_count
         #   - OpenRouter: prompt_tokens
         #
-        #   @return [Integer] the number of input tokens
+        #   @return [Integer]
         attribute :input_tokens, :integer, default: 0
 
         # @!attribute [rw] output_tokens
-        #   Number of tokens in the output/completion.
-        #
         #   Normalized from:
         #   - OpenAI Chat: completion_tokens
         #   - OpenAI Responses API: output_tokens
@@ -54,112 +47,115 @@ module ActiveAgent
         #   - OpenRouter: completion_tokens
         #   - OpenAI Embeddings: 0 (no output tokens)
         #
-        #   @return [Integer] the number of output tokens
+        #   @return [Integer]
         attribute :output_tokens, :integer, default: 0
 
         # @!attribute [rw] total_tokens
-        #   Total number of tokens used (input + output).
+        #   Automatically calculated as input_tokens + output_tokens if not provided by provider.
         #
-        #   If not provided by the provider, this is automatically calculated
-        #   as input_tokens + output_tokens.
-        #
-        #   @return [Integer] the total number of tokens
+        #   @return [Integer]
         attribute :total_tokens, :integer
 
         # @!attribute [rw] cached_tokens
-        #   Number of tokens retrieved from cache (if supported by provider).
-        #
         #   Available from:
         #   - OpenAI: prompt_tokens_details.cached_tokens or input_tokens_details.cached_tokens
         #   - Anthropic: cache_read_input_tokens
         #
-        #   @return [Integer, nil] the number of cached tokens, or nil if not available
+        #   @return [Integer, nil]
         attribute :cached_tokens, :integer
 
         # @!attribute [rw] reasoning_tokens
-        #   Number of tokens used for reasoning/chain-of-thought (if supported).
-        #
         #   Available from:
         #   - OpenAI Chat: completion_tokens_details.reasoning_tokens
         #   - OpenAI Responses: output_tokens_details.reasoning_tokens
         #
-        #   @return [Integer, nil] the number of reasoning tokens, or nil if not available
+        #   @return [Integer, nil]
         attribute :reasoning_tokens, :integer
 
         # @!attribute [rw] audio_tokens
-        #   Number of tokens used for audio processing (if supported).
-        #
         #   Available from:
         #   - OpenAI: sum of prompt_tokens_details.audio_tokens and completion_tokens_details.audio_tokens
         #
-        #   @return [Integer, nil] the number of audio tokens, or nil if not available
+        #   @return [Integer, nil]
         attribute :audio_tokens, :integer
 
         # @!attribute [rw] cache_creation_tokens
-        #   Number of tokens used to create cache entries (if supported).
-        #
         #   Available from:
         #   - Anthropic: cache_creation_input_tokens
         #
-        #   @return [Integer, nil] the number of cache creation tokens, or nil if not available
+        #   @return [Integer, nil]
         attribute :cache_creation_tokens, :integer
 
         # @!attribute [rw] service_tier
-        #   Service tier used for the request (if provided by provider).
-        #
         #   Available from:
         #   - Anthropic: service_tier ("standard", "priority", "batch")
         #
-        #   @return [String, nil] the service tier, or nil if not available
+        #   @return [String, nil]
         attribute :service_tier, :string
 
         # @!attribute [rw] duration_ms
-        #   Total duration of the request in milliseconds (if provided by provider).
-        #
         #   Available from:
         #   - Ollama: total_duration (converted from nanoseconds)
         #
-        #   @return [Integer, nil] the duration in milliseconds, or nil if not available
+        #   @return [Integer, nil]
         attribute :duration_ms, :integer
 
         # @!attribute [rw] provider_details
-        #   Hash containing provider-specific metadata and additional fields.
+        #   Preserves provider-specific information that doesn't fit the normalized structure.
+        #   Useful for debugging or provider-specific features.
         #
-        #   This preserves all provider-specific information that doesn't fit
-        #   into the normalized structure, allowing access to raw provider data
-        #   when needed for debugging or provider-specific features.
-        #
-        #   @return [Hash] provider-specific metadata
+        #   @return [Hash]
         attribute :provider_details, default: -> { {} }
 
-        # Initializes a new Usage object.
+        # Automatically calculates total_tokens if not provided.
         #
-        # If total_tokens is not provided, it will be automatically calculated
-        # from input_tokens and output_tokens.
-        #
-        # @param attributes [Hash] usage attributes
-        # @option attributes [Integer] :input_tokens number of input tokens
-        # @option attributes [Integer] :output_tokens number of output tokens
-        # @option attributes [Integer] :total_tokens total tokens (calculated if not provided)
-        # @option attributes [Integer] :cached_tokens cached tokens
-        # @option attributes [Integer] :reasoning_tokens reasoning tokens
-        # @option attributes [Integer] :audio_tokens audio tokens
-        # @option attributes [Integer] :cache_creation_tokens cache creation tokens
-        # @option attributes [String] :service_tier service tier
-        # @option attributes [Integer] :duration_ms duration in milliseconds
-        # @option attributes [Hash] :provider_details provider-specific metadata
-        #
-        # @return [Usage] the initialized usage object
+        # @param attributes [Hash]
+        # @option attributes [Integer] :input_tokens
+        # @option attributes [Integer] :output_tokens
+        # @option attributes [Integer] :total_tokens (calculated if not provided)
+        # @option attributes [Integer] :cached_tokens
+        # @option attributes [Integer] :reasoning_tokens
+        # @option attributes [Integer] :audio_tokens
+        # @option attributes [Integer] :cache_creation_tokens
+        # @option attributes [String] :service_tier
+        # @option attributes [Integer] :duration_ms
+        # @option attributes [Hash] :provider_details
         def initialize(attributes = {})
           super
           # Calculate total_tokens if not provided
           self.total_tokens ||= (input_tokens || 0) + (output_tokens || 0)
         end
 
+        # Sums all token counts from two Usage objects.
+        #
+        # @param other [Usage]
+        # @return [Usage]
+        #
+        # @example
+        #   usage1 = Usage.new(input_tokens: 100, output_tokens: 50)
+        #   usage2 = Usage.new(input_tokens: 75, output_tokens: 25)
+        #   combined = usage1 + usage2
+        #   combined.input_tokens  #=> 175
+        #   combined.output_tokens #=> 75
+        #   combined.total_tokens  #=> 250
+        def +(other)
+          return self unless other
+
+          self.class.new(
+            input_tokens:          self.input_tokens  + other.input_tokens,
+            output_tokens:         self.output_tokens + other.output_tokens,
+            total_tokens:          self.total_tokens  + other.total_tokens,
+            cached_tokens:         sum_optional(self.cached_tokens,         other.cached_tokens),
+            cache_creation_tokens: sum_optional(self.cache_creation_tokens, other.cache_creation_tokens),
+            reasoning_tokens:      sum_optional(self.reasoning_tokens,      other.reasoning_tokens),
+            audio_tokens:          sum_optional(self.audio_tokens,          other.audio_tokens)
+          )
+        end
+
         # Creates a Usage object from OpenAI Chat Completion usage data.
         #
-        # @param usage_hash [Hash] the OpenAI usage hash
-        # @return [Usage] normalized usage object
+        # @param usage_hash [Hash]
+        # @return [Usage]
         #
         # @example
         #   Usage.from_openai_chat({
@@ -194,8 +190,8 @@ module ActiveAgent
 
         # Creates a Usage object from OpenAI Embedding API usage data.
         #
-        # @param usage_hash [Hash] the OpenAI embedding usage hash
-        # @return [Usage] normalized usage object
+        # @param usage_hash [Hash]
+        # @return [Usage]
         #
         # @example
         #   Usage.from_openai_embedding({
@@ -217,8 +213,8 @@ module ActiveAgent
 
         # Creates a Usage object from OpenAI Responses API usage data.
         #
-        # @param usage_hash [Hash] the OpenAI responses usage hash
-        # @return [Usage] normalized usage object
+        # @param usage_hash [Hash]
+        # @return [Usage]
         #
         # @example
         #   Usage.from_openai_responses({
@@ -247,8 +243,8 @@ module ActiveAgent
 
         # Creates a Usage object from Anthropic usage data.
         #
-        # @param usage_hash [Hash] the Anthropic usage hash
-        # @return [Usage] normalized usage object
+        # @param usage_hash [Hash]
+        # @return [Usage]
         #
         # @example
         #   Usage.from_anthropic({
@@ -275,8 +271,8 @@ module ActiveAgent
 
         # Creates a Usage object from Ollama usage data.
         #
-        # @param usage_hash [Hash] the Ollama usage hash
-        # @return [Usage] normalized usage object
+        # @param usage_hash [Hash]
+        # @return [Usage]
         #
         # @example
         #   Usage.from_ollama({
@@ -307,8 +303,8 @@ module ActiveAgent
         #
         # OpenRouter uses the same format as OpenAI Chat Completion.
         #
-        # @param usage_hash [Hash] the OpenRouter usage hash
-        # @return [Usage] normalized usage object
+        # @param usage_hash [Hash]
+        # @return [Usage]
         #
         # @example
         #   Usage.from_openrouter({
@@ -322,16 +318,12 @@ module ActiveAgent
 
         # Auto-detects the provider format and creates a normalized Usage object.
         #
-        # This method inspects the usage hash structure to determine which provider
-        # format it matches and calls the appropriate factory method.
-        #
         # @note Detection is based on hash structure rather than native gem types
-        #   (e.g., Anthropic::Models::Message, OpenAI::Models::Chat::ChatCompletion)
         #   because we cannot force-load all provider gems. This allows the framework
         #   to work with only the gems the user has installed.
         #
-        # @param usage_hash [Hash] the provider usage hash
-        # @return [Usage, nil] normalized usage object, or nil if format unrecognized
+        # @param usage_hash [Hash]
+        # @return [Usage, nil]
         #
         # @example
         #   Usage.from_provider_usage(some_usage_hash)
@@ -363,21 +355,25 @@ module ActiveAgent
 
         private
 
-        # Converts nanoseconds to milliseconds.
-        #
-        # @param nanoseconds [Integer, nil] duration in nanoseconds
-        # @return [Integer, nil] duration in milliseconds, or nil if input is nil
+        # @param a [Integer, nil]
+        # @param b [Integer, nil]
+        # @return [Integer, nil] nil if both inputs are nil
+        def sum_optional(a, b)
+          return nil if a.nil? && b.nil?
+          (a || 0) + (b || 0)
+        end
+
+        # @param nanoseconds [Integer, nil]
+        # @return [Integer, nil]
         def self.convert_nanoseconds_to_ms(nanoseconds)
           return nil unless nanoseconds
 
           (nanoseconds / 1_000_000.0).round
         end
 
-        # Calculates tokens per second from token count and duration.
-        #
-        # @param tokens [Integer, nil] number of tokens
-        # @param duration_ns [Integer, nil] duration in nanoseconds
-        # @return [Float, nil] tokens per second, or nil if inputs are invalid
+        # @param tokens [Integer, nil]
+        # @param duration_ns [Integer, nil]
+        # @return [Float, nil]
         def self.calculate_tokens_per_second(tokens, duration_ns)
           return nil unless tokens && duration_ns && duration_ns > 0
 
