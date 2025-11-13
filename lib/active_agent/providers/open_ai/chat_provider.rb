@@ -117,17 +117,27 @@ module ActiveAgent
         end
 
         # Extracts messages from the completed API response.
+        # Converts OpenAI gem response object to hash for storage.
         #
         # @param api_response [OpenAI::Models::Chat::ChatCompletion]
+        # @return [Common::PromptResponse, nil]
+        def process_prompt_finished(api_response = nil)
+          # Convert gem object to hash so that raw_response["usage"] works
+          api_response_hash = api_response ? Chat::Transforms.gem_to_hash(api_response) : nil
+          super(api_response_hash)
+        end
+
+        # Extracts messages from completed API response.
+        #
+        # @param api_response [Hash] converted response hash
         # @return [Array<Hash>, nil] single-element array with message or nil if no message
         # @see Base#process_prompt_finished_extract_messages
         def process_prompt_finished_extract_messages(api_response)
           return unless api_response
 
-          api_message = api_response.choices[0].message
-          message = JSON.parse(api_message.to_json, symbolize_names: true)
+          api_message = api_response[:choices][0][:message]
 
-          [ message ]
+          [ api_message ]
         end
 
         # Extracts function calls from the last message in the stack.

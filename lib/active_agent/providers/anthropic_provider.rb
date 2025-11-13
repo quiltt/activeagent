@@ -192,12 +192,22 @@ module ActiveAgent
       end
 
       # Converts API response message to hash for message_stack.
+      # Converts Anthropic gem response object to hash for storage.
+      #
+      # @param api_response [Anthropic::Models::Message]
+      # @return [Common::PromptResponse, nil]
+      def process_prompt_finished(api_response = nil)
+        # Convert gem object to hash so that raw_response[:usage] works
+        api_response_hash = api_response ? Anthropic::Transforms.gem_to_hash(api_response) : nil
+        super(api_response_hash)
+      end
+
       #
       # Handles JSON response format simulation by prepending `{` to the response
       # content after removing the assistant lead-in message.
       #
       # @see BaseProvider#process_prompt_finished_extract_messages
-      # @param api_response [Anthropic::Models::Message]
+      # @param api_response [Hash] converted response hash
       # @return [Array<Hash>, nil]
       def process_prompt_finished_extract_messages(api_response)
         return unless api_response
@@ -205,12 +215,10 @@ module ActiveAgent
         # Handle JSON response format simulation
         if request.response_format&.dig(:type) == "json_object"
           request.pop_message!
-          api_response.content[0].text = "{#{api_response.content[0].text}"
+          api_response[:content][0][:text] = "{#{api_response[:content][0][:text]}"
         end
 
-        message = Anthropic::Transforms.gem_to_hash(api_response)
-
-        [ message ]
+        [ api_response ]
       end
 
       # Extracts tool_use blocks from message_stack and parses JSON inputs.
