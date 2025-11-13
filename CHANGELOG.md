@@ -163,6 +163,17 @@ response.usage.reasoning_tokens   # OpenAI o1 models
 response.usage.service_tier       # Anthropic
 ```
 
+**Enhanced Instrumentation for APM Integration**
+- Added comprehensive event payload data for monitoring tools (New Relic, DataDog, etc.)
+- `prompt_start` and `embed_start` events now include request parameters:
+  - Model, temperature, max_tokens, top_p, stream
+  - Message count, tool usage, input size
+  - Encoding format and dimensions for embeddings
+- `prompt_complete` and `embed_complete` events now include:
+  - Usage data (`input_tokens`, `output_tokens`, `total_tokens`, `cached_tokens`) - critical for cost tracking
+  - Response metadata (`finish_reason`, `response_model`, `response_id`)
+  - Embedding count for batch operations
+
 **Provider Enhancements**
 - OpenAI Responses API: `api: :responses` or `api: :chat`
 - Anthropic JSON object mode with automatic extraction

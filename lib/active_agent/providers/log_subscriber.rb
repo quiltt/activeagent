@@ -177,38 +177,6 @@ module ActiveAgent
       end
       # event_log_level :prompt_complete, :debug # Rails 8.1
 
-      # Logs retry attempts
-      #
-      # @param event [ActiveSupport::Notifications::Event]
-      def retry_attempt(event)
-        trace_id        = event.payload[:trace_id]
-        provider_module = event.payload[:provider_module]
-        attempt         = event.payload[:attempt]
-        max_retries     = event.payload[:max_retries]
-        exception       = event.payload[:exception]
-        backoff_time    = event.payload[:backoff_time]
-
-        debug do
-          "[#{trace_id}] [ActiveAgent] [#{provider_module}:Retries] Attempt #{attempt}/#{max_retries} failed with #{exception}, retrying in #{backoff_time}s"
-        end
-      end
-      # event_log_level :retry_attempt, :debug # Rails 8.1
-
-      # Logs when max retries are exceeded
-      #
-      # @param event [ActiveSupport::Notifications::Event]
-      def retry_exhausted(event)
-        trace_id        = event.payload[:trace_id]
-        provider_module = event.payload[:provider_module]
-        max_retries     = event.payload[:max_retries]
-        exception       = event.payload[:exception]
-
-        debug do
-          "[#{trace_id}] [ActiveAgent] [#{provider_module}:Retries] Max retries (#{max_retries}) exceeded for #{exception}"
-        end
-      end
-      # event_log_level :retry_exhausted, :debug # Rails 8.1
-
       # Logs tool execution
       #
       # @param event [ActiveSupport::Notifications::Event]

@@ -2,6 +2,7 @@ require "active_support/delegation"
 
 require_relative "common/response"
 require_relative "concerns/exception_handler"
+require_relative "concerns/instrumentation"
 require_relative "concerns/previewable"
 
 # Maps provider types to their gem dependencies.
@@ -44,6 +45,7 @@ module ActiveAgent
       extend ActiveSupport::Delegation
 
       include ExceptionHandler
+      include Instrumentation
       include Previewable
 
       class ProvidersError < StandardError; end
@@ -113,8 +115,9 @@ module ActiveAgent
       #
       # @return [ActiveAgent::Providers::Common::PromptResponse]
       def prompt
-        instrument("prompt_start.provider.active_agent") do
-          self.request = prompt_request_type.cast(context.except(:trace_id))
+        self.request = prompt_request_type.cast(context.except(:trace_id))
+
+        instrument("prompt_start.provider.active_agent", instrumentation_prompt_start_payload) do
           resolve_prompt
         end
       end
@@ -135,8 +138,9 @@ module ActiveAgent
       #
       # @return [ActiveAgent::Providers::Common::EmbedResponse]
       def embed
-        instrument("embed_start.provider.active_agent") do
-          self.request = embed_request_type.cast(context.except(:trace_id))
+        self.request = embed_request_type.cast(context.except(:trace_id))
+
+        instrument("embed_start.provider.active_agent", instrumentation_embed_start_payload) do
           resolve_embed
         end
       end
@@ -190,7 +194,12 @@ module ActiveAgent
           with_exception_handling { api_embed_execute(api_parameters) }
         end
 
-        process_embed_finished(api_response)
+        response = process_embed_finished(api_response)
+
+        # Instrument completion with enhanced payload including usage data
+        instrument("embed_complete.provider.active_agent", instrumentation_embed_complete_payload(response))
+
+        response
       end
 
       # Prepares request for next iteration in multi-turn conversation.
@@ -337,22 +346,26 @@ module ActiveAgent
           # as they continue to work.
           broadcast_stream_close
 
-          instrument("prompt_complete.provider.active_agent", message_count: message_stack.size)
-
           # To convert the messages into common format we first need to merge the current
           # stack and then cast them to the provider type, so we can cast them out to common.
           messages = prompt_request_type.cast(
             messages: [ *request.messages, *message_stack ]
           ).messages
 
-          # This will returned as it closes up the recursive stack
-          Common::PromptResponse.new(
+          # Create response object first so we can extract usage data
+          response = Common::PromptResponse.new(
             context:,
             raw_request:  prompt_request_type.serialize(request),
             raw_response: api_response,
             messages:,
             format: request.response_format
           )
+
+          # Instrument completion with enhanced payload including usage data
+          instrument("prompt_complete.provider.active_agent", instrumentation_prompt_complete_payload(response))
+
+          # This will returned as it closes up the recursive stack
+          response
         end
       end
 

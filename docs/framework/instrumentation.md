@@ -12,18 +12,24 @@ This instrumentation API is in beta and may change with Rails 8.1. Event names, 
 
 ## Available Events
 
-ActiveAgent publishes instrumentation events throughout the generation lifecycle. Subscribe to these events to monitor operations, track performance, and handle errors:
+ActiveAgent publishes instrumentation events throughout the generation lifecycle. Subscribe to these events to monitor operations, track performance, and handle errors.
 
-### Provider Events
+### Prompt Lifecycle Events
 
-| Event | When Triggered | Description |
-|-------|----------------|-------------|
-| `prompt_start.provider.active_agent` | Before prompt request | Prompt generation initiated |
-| `embed_start.provider.active_agent` | Before embedding request | Embedding generation initiated |
-| `request_prepared.provider.active_agent` | After request built | Request prepared with formatted messages |
-| `api_call.provider.active_agent` | After API response | Provider API call completed |
-| `embed_call.provider.active_agent` | After embedding API response | Embedding API call completed |
-| `prompt_complete.provider.active_agent` | After full generation | Entire generation cycle finished |
+| Event | When Triggered | Key Payload Data |
+|-------|----------------|------------------|
+| `prompt_start.provider.active_agent` | Before prompt request | `model`, `temperature`, `max_tokens`, `message_count`, `has_tools`, `stream` |
+| `request_prepared.provider.active_agent` | After request built | `message_count` |
+| `api_call.provider.active_agent` | After API response | `streaming` |
+| `prompt_complete.provider.active_agent` | After full generation | `usage` (tokens), `finish_reason`, `response_model`, `response_id`, `message_count` |
+
+### Embedding Events
+
+| Event | When Triggered | Key Payload Data |
+|-------|----------------|------------------|
+| `embed_start.provider.active_agent` | Before embedding request | `model`, `input_size`, `encoding_format`, `dimensions` |
+| `embed_call.provider.active_agent` | After embedding API call | Basic metadata |
+| `embed_complete.provider.active_agent` | After embedding finished | `usage` (tokens), `embedding_count`, `response_model`, `response_id` |
 
 ### Streaming Events
 
@@ -40,13 +46,6 @@ ActiveAgent publishes instrumentation events throughout the generation lifecycle
 | `tool_calls_processing.provider.active_agent` | Before executing tools | Tool/function calls detected and processing |
 | `multi_turn_continue.provider.active_agent` | After tool execution | Continuing conversation after tool use |
 | `tool_execute.provider.active_agent` | During tool execution | Individual tool being executed |
-
-### Error Events
-
-| Event | When Triggered | Description |
-|-------|----------------|-------------|
-| `retry_attempt.provider.active_agent` | After failed request | Retry attempt after error |
-| `retry_exhausted.provider.active_agent` | After max retries | All retry attempts exhausted |
 
 ### Agent Events
 
@@ -111,19 +110,53 @@ end
 
 ### Event Payload Data
 
-Each event includes contextual data in the payload hash. Common fields across events:
+Each event includes contextual data in the payload hash. All events include:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `trace_id` | String | Unique identifier for tracking related operations across the request lifecycle (optionally set when prompting) |
-| `provider_module` | String | Provider class handling the request (e.g., `"OpenAI::Responses"`) |
-| `message_count` | Integer | Number of messages in the context (varies by event) |
-| `streaming` | Boolean | Whether streaming is enabled for this request |
-| `tool_count` | Integer | Number of tool calls being processed (tool events only) |
-| `usage` | Hash | Token usage information from provider response |
-| `attempt` | Integer | Current retry attempt number (retry events only) |
-| `max_retries` | Integer | Maximum retry attempts configured (retry events only) |
-| `exception` | String | Exception class name (error events only) |
+| `provider` | String | Provider name (e.g., `"OpenAI"`, `"Anthropic"`) |
+| `provider_module` | String | Provider class handling the request (e.g., `"OpenAI::Chat"`) |
+| `trace_id` | String | Unique identifier for tracking related operations (optionally set when prompting) |
+
+**Prompt Start (`prompt_start`) includes:**
+- `model` - Model name (e.g., `"gpt-4o-mini"`)
+- `temperature` - Temperature parameter (e.g., `0.7`)
+- `max_tokens` - Maximum tokens to generate
+- `top_p` - Nucleus sampling parameter
+- `message_count` - Number of messages in request
+- `has_tools` - Whether tools are available
+- `tool_count` - Number of available tools
+- `has_instructions` - Whether system instructions provided
+- `stream` - Whether streaming enabled
+
+**Prompt Complete (`prompt_complete`) includes:**
+- `usage` - Token usage hash with:
+  - `input_tokens` - Prompt tokens consumed
+  - `output_tokens` - Completion tokens generated
+  - `total_tokens` - Total tokens used
+  - `cached_tokens` - Cached/reused tokens (when available)
+- `finish_reason` - Why generation stopped (`"stop"`, `"length"`, `"tool_calls"`, etc.)
+- `response_model` - Actual model used by provider
+- `response_id` - Unique response identifier
+- `message_count` - Final message count in stack
+
+**Embed Start (`embed_start`) includes:**
+- `model` - Embedding model name
+- `input_size` - Number of texts to embed
+- `encoding_format` - Output format (e.g., `"float"`)
+- `dimensions` - Embedding dimensions
+
+**Embed Complete (`embed_complete`) includes:**
+- `usage` - Token usage hash with:
+  - `input_tokens` - Tokens in input text
+  - `total_tokens` - Total tokens used
+- `embedding_count` - Number of embeddings generated
+- `response_model` - Actual model used
+- `response_id` - Unique response identifier
+
+**Tool Events:**
+- `tool_count` - Number of tool calls (tool_calls_processing)
+- `tool_name` - Tool being executed (tool_execution)
 
 Access duration via `event.duration` (in milliseconds).
 
@@ -147,7 +180,7 @@ end
 
 **Cost Tracking:**
 
-Monitor token usage and calculate costs by provider:
+Monitor token usage and calculate costs by provider. Usage data is normalized across all providers:
 
 ```ruby
 ActiveSupport::Notifications.subscribe("prompt_complete.provider.active_agent") do |event|
@@ -155,29 +188,59 @@ ActiveSupport::Notifications.subscribe("prompt_complete.provider.active_agent") 
   next unless usage
 
   CostTracker.record(
-    provider: event.payload[:provider_module],
-    prompt_tokens: usage[:prompt_tokens],
-    completion_tokens: usage[:completion_tokens],
+    provider: event.payload[:provider],
+    model: event.payload[:response_model],
+    input_tokens: usage[:input_tokens],
+    output_tokens: usage[:output_tokens],
     total_tokens: usage[:total_tokens],
+    cached_tokens: usage[:cached_tokens], # May be nil
+    trace_id: event.payload[:trace_id]
+  )
+end
+
+# Track embedding costs
+ActiveSupport::Notifications.subscribe("embed_complete.provider.active_agent") do |event|
+  usage = event.payload[:usage]
+  next unless usage
+
+  CostTracker.record(
+    provider: event.payload[:provider],
+    model: event.payload[:response_model],
+    input_tokens: usage[:input_tokens],
+    embedding_count: event.payload[:embedding_count],
     trace_id: event.payload[:trace_id]
   )
 end
 ```
 
-**Error Tracking:**
+**Request/Response Correlation:**
 
-Capture failures and send to error monitoring service:
+Track request parameters and correlate with response quality:
 
 ```ruby
-ActiveSupport::Notifications.subscribe("retry_exhausted.provider.active_agent") do |event|
-  Sentry.capture_message(
-    "AI request failed after #{event.payload[:max_retries]} retries",
-    level: :error,
-    extra: {
-      trace_id: event.payload[:trace_id],
-      provider: event.payload[:provider_module],
-      exception: event.payload[:exception]
-    }
+# Store request params at start
+ActiveSupport::Notifications.subscribe("prompt_start.provider.active_agent") do |event|
+  RequestTracker.store(
+    event.payload[:trace_id],
+    model: event.payload[:model],
+    temperature: event.payload[:temperature],
+    max_tokens: event.payload[:max_tokens],
+    has_tools: event.payload[:has_tools]
+  )
+end
+
+# Correlate with response data
+ActiveSupport::Notifications.subscribe("prompt_complete.provider.active_agent") do |event|
+  request_data = RequestTracker.fetch(event.payload[:trace_id])
+
+  Analytics.track_generation(
+    request: request_data,
+    response: {
+      finish_reason: event.payload[:finish_reason],
+      response_id: event.payload[:response_id],
+      usage: event.payload[:usage]
+    },
+    duration: event.duration
   )
 end
 ```
@@ -223,19 +286,11 @@ class CustomAgentLogger < ActiveAgent::LogSubscriber
     info "✅ Prompt completed: #{message_count} messages in #{duration}ms"
   end
 
-  def tool_execute(event)
+  def tool_execution(event)
     return unless logger.debug?
 
     tool_name = event.payload[:tool_name]
     debug "🔧 Tool executed: #{tool_name}"
-  end
-
-  def retry_attempt(event)
-    attempt = event.payload[:attempt]
-    max_retries = event.payload[:max_retries]
-    exception = event.payload[:exception]
-
-    warn "⚠️  Retry attempt #{attempt}/#{max_retries} (#{exception})"
   end
 end
 
@@ -243,23 +298,6 @@ end
 ActiveAgent::LogSubscriber.detach_from :active_agent
 CustomAgentLogger.attach_to :active_agent
 ```
-
-## Common Debugging Scenarios
-
-**Slow generation:**
-1. Check `api_call` event duration
-2. Look for multiple `tool_execute` events (multi-turn overhead)
-3. Check `message_count` in `request_prepared` (large context)
-
-**Tool execution issues:**
-1. Enable debug logging to see `tool_execute` events
-2. Check `tool_calls_processing` for tool count
-3. Look for `multi_turn_continue` to verify conversation flow
-
-**Retry behavior:**
-1. Watch for `retry_attempt` events with backoff times
-2. Check `retry_exhausted` for ultimate failures
-3. Review exception types in retry payloads
 
 ## Related Documentation
 

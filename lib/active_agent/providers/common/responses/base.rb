@@ -57,7 +57,9 @@ module ActiveAgent
           #   Contains the raw API response from the provider, including all
           #   metadata, usage stats, and provider-specific fields.
           #
-          #   @return [Hash] the provider-formatted response
+          #   Note: Hash keys are automatically deep symbolized for consistent access.
+          #
+          #   @return [Hash] the provider-formatted response with symbolized keys
           attribute :raw_response, writable: false
 
           # Initializes a new response object with deep-duplicated attributes.
@@ -66,6 +68,9 @@ module ActiveAgent
           # independent copy of the data, preventing external modifications from
           # affecting the response's internal state.
           #
+          # Additionally, raw_response is deep symbolized for consistent key access
+          # across all providers.
+          #
           # @param kwargs [Hash] response attributes
           # @option kwargs [Hash] :context the original request context
           # @option kwargs [Hash] :raw_request the provider-formatted request
@@ -73,7 +78,14 @@ module ActiveAgent
           #
           # @return [Base] the initialized response object
           def initialize(kwargs = {})
-            super(kwargs.deep_dup) # Ensure that userland can't fuck with our memory space
+            kwargs = kwargs.deep_dup # Ensure that userland can't fuck with our memory space
+
+            # Deep symbolize raw_response for consistent access across all extraction methods
+            if kwargs[:raw_response].is_a?(Hash)
+              kwargs[:raw_response] = kwargs[:raw_response].deep_symbolize_keys
+            end
+
+            super(kwargs)
           end
 
           # Extracts instructions from the context.
@@ -112,14 +124,83 @@ module ActiveAgent
               return nil unless raw_response
 
               # Extract raw usage hash from provider response
-              # Support both string and symbol keys for compatibility
-              raw_usage = if raw_response.is_a?(Hash)
-                raw_response["usage"] || raw_response[:usage]
-              end
+              raw_usage = raw_response[:usage] if raw_response.is_a?(Hash)
 
               Usage.from_provider_usage(raw_usage)
             end
           end
+
+          # Returns the response ID from the provider.
+          #
+          # All providers (OpenAI, Anthropic, Ollama, OpenRouter) return unique
+          # identifiers for their responses, useful for tracking and debugging.
+          #
+          # @return [String, nil] the response ID, or nil if not available
+          #
+          # @example Accessing response ID
+          #   response.id  #=> "chatcmpl-CbDx1nXoNSBrNIMhiuy5fk7jXQjmT" (OpenAI)
+          #   response.id  #=> "msg_01RotDmSnYpKQjrTpaHUaEBz" (Anthropic)
+          #   response.id  #=> "gen-1761505659-yxgaVsqVABMQqw6oA7QF" (OpenRouter)
+          def id
+            @id ||= begin
+              return nil unless raw_response
+
+              if raw_response.is_a?(Hash)
+                raw_response[:id]
+              elsif raw_response.respond_to?(:id)
+                raw_response.id
+              end
+            end
+          end
+
+          # Returns the model name from the provider response.
+          #
+          # Useful for confirming which model was actually used, as providers may
+          # use different model versions than requested.
+          #
+          # @return [String, nil] the model name, or nil if not available
+          #
+          # @example Accessing response model
+          #   response.model  #=> "gpt-4o-mini-2024-07-18"
+          #   response.model  #=> "claude-3-5-haiku-20241022"
+          def model
+            @model ||= begin
+              return nil unless raw_response
+
+              if raw_response.is_a?(Hash)
+                raw_response[:model]
+              elsif raw_response.respond_to?(:model)
+                raw_response.model
+              end
+            end
+          end
+
+          # Returns the finish reason from the provider response.
+          #
+          # Indicates why the generation stopped (e.g., "stop", "length", "tool_calls").
+          # Different providers use different field names but this method normalizes access.
+          #
+          # @return [String, nil] the finish reason, or nil if not available
+          #
+          # @example Accessing finish reason
+          #   response.finish_reason  #=> "stop"
+          #   response.finish_reason  #=> "length"
+          #   response.finish_reason  #=> "tool_calls"
+          #   response.stop_reason    #=> "stop" (alias)
+          def finish_reason
+            @finish_reason ||= begin
+              return nil unless raw_response
+
+              if raw_response.is_a?(Hash)
+                # OpenAI format: choices[0].finish_reason or choices[0].message.finish_reason
+                raw_response.dig(:choices, 0, :finish_reason) ||
+                  raw_response.dig(:choices, 0, :message, :finish_reason) ||
+                  # Anthropic format: stop_reason
+                  raw_response[:stop_reason]
+              end
+            end
+          end
+          alias_method :stop_reason, :finish_reason
         end
       end
     end

@@ -123,28 +123,6 @@ class LogSubscriberTest < ActiveSupport::TestCase
     assert_match(/total: \d+\.\d+ms/, @log_output.string)
   end
 
-  test "retry_attempt event is logged" do
-    ActiveSupport::Notifications.instrument("retry_attempt.provider.active_agent",
-                                           provider_module: "OpenAI",
-                                           attempt: 2,
-                                           max_retries: 3,
-                                           exception: "TimeoutError",
-                                           backoff_time: 2.5)
-
-    assert_match(/Attempt 2\/3 failed with TimeoutError/, @log_output.string)
-    assert_match(/retrying in 2.5s/, @log_output.string)
-  end
-
-  test "retry_exhausted event is logged" do
-    ActiveSupport::Notifications.instrument("retry_exhausted.provider.active_agent",
-                                           provider_module: "OpenAI",
-                                           max_retries: 3,
-                                           exception: "SocketError")
-
-    assert_match(/Max retries \(3\) exceeded/, @log_output.string)
-    assert_match(/SocketError/, @log_output.string)
-  end
-
   test "logs nothing when logger level is above debug" do
     ActiveAgent::Base.logger.level = Logger::INFO
 
