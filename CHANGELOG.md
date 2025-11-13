@@ -148,6 +148,21 @@ response = MyAgent.embed(inputs: ["Text 1", "Text 2"]).embed_now
 vectors = response.data.map { |d| d[:embedding] }
 ```
 
+**Normalized Usage Statistics**
+```ruby
+response = MyAgent.prompt("Hello").generate_now
+
+# Works across all providers
+response.usage.input_tokens
+response.usage.output_tokens
+response.usage.total_tokens
+
+# Provider-specific fields when available
+response.usage.cached_tokens      # OpenAI, Anthropic
+response.usage.reasoning_tokens   # OpenAI o1 models
+response.usage.service_tier       # Anthropic
+```
+
 **Provider Enhancements**
 - OpenAI Responses API: `api: :responses` or `api: :chat`
 - Anthropic JSON object mode with automatic extraction
@@ -195,6 +210,7 @@ vectors = response.data.map { |d| d[:embedding] }
 - Template rendering without blocks
 - Schema generator key symbolization
 - Rails 8.0 and 8.1 compatibility
+- Usage extraction across OpenAI/Anthropic response formats
 
 ### Removed
 

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "active_agent/providers/common/model"
+require "active_agent/providers/common/usage"
 
 module ActiveAgent
   module Providers
@@ -21,7 +22,7 @@ module ActiveAgent
         # @example Accessing response data
         #   response = agent.prompt.generate_now
         #   response.success?         #=> true
-        #   response.usage            #=> { "prompt_tokens" => 10, "completion_tokens" => 20 }
+        #   response.usage            #=> Usage object with normalized fields
         #   response.total_tokens     #=> 30
         #
         # @example Inspecting raw provider data
@@ -91,58 +92,33 @@ module ActiveAgent
             true
           end
 
-          # Extracts usage statistics from the raw response.
+          # Returns normalized usage statistics across all providers.
           #
-          # Most providers (OpenAI, Anthropic, etc.) return usage data in a
-          # standardized format within the response. This method extracts that
-          # information for token counting and billing purposes.
+          # This method provides a consistent interface for accessing token usage
+          # regardless of the underlying provider. It automatically detects the
+          # provider format and returns a {Usage} object with normalized fields.
           #
-          # @return [Hash, nil] usage statistics hash with keys like "prompt_tokens",
-          #   "completion_tokens", and "total_tokens", or nil if not available
+          # @return [Usage, nil] normalized usage object, or nil if not available
           #
-          # @example Usage data structure
-          #   {
-          #     "prompt_tokens" => 10,
-          #     "completion_tokens" => 20,
-          #     "total_tokens" => 30
-          #   }
+          # @example Accessing normalized usage
+          #   response.usage.input_tokens      #=> 100
+          #   response.usage.output_tokens     #=> 25
+          #   response.usage.total_tokens      #=> 125
+          #   response.usage.cached_tokens     #=> 20 (if available)
+          #
+          # @see Usage
           def usage
-            return nil unless raw_response
+            @usage ||= begin
+              return nil unless raw_response
 
-            # Most providers store usage in the same format
-            if raw_response.is_a?(Hash) && raw_response["usage"]
-              raw_response["usage"]
+              # Extract raw usage hash from provider response
+              # Support both string and symbol keys for compatibility
+              raw_usage = if raw_response.is_a?(Hash)
+                raw_response["usage"] || raw_response[:usage]
+              end
+
+              Usage.from_provider_usage(raw_usage)
             end
-          end
-
-          # Extracts the number of tokens used in the prompt/input.
-          #
-          # @return [Integer, nil] number of prompt tokens used, or nil if unavailable
-          #
-          # @example
-          #   response.prompt_tokens #=> 10
-          def prompt_tokens
-            usage&.dig("prompt_tokens")
-          end
-
-          # Extracts the number of tokens used in the completion/output.
-          #
-          # @return [Integer, nil] number of completion tokens used, or nil if unavailable
-          #
-          # @example
-          #   response.completion_tokens #=> 20
-          def completion_tokens
-            usage&.dig("completion_tokens")
-          end
-
-          # Extracts the total number of tokens used (prompt + completion).
-          #
-          # @return [Integer, nil] total number of tokens used, or nil if unavailable
-          #
-          # @example
-          #   response.total_tokens #=> 30
-          def total_tokens
-            usage&.dig("total_tokens")
           end
         end
       end
