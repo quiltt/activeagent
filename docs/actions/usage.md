@@ -6,6 +6,10 @@ description: Track token usage and performance metrics across all AI providers w
 
 Track token consumption and performance metrics from AI provider responses. All providers return normalized usage statistics for consistent cost tracking and monitoring.
 
+::: tip Monitor Usage in Production
+See [Instrumentation](/framework/instrumentation) to monitor usage statistics in real-time using ActiveSupport::Notifications.
+:::
+
 ## Accessing Usage
 
 Get usage statistics from any response:
@@ -42,6 +46,8 @@ Raw provider data preserved in `provider_details`:
 Calculate costs using token counts:
 
 <<< @/../test/docs/actions/usage_examples_test.rb#cost_tracking{ruby:line-numbers}
+
+**Monitor costs in production:** Use [Instrumentation](/framework/instrumentation#cost-tracking) to automatically track costs across all requests.
 
 ## Embeddings Usage
 

@@ -7,17 +7,13 @@ module ActiveAgent
   module Providers
     module Common
       module Responses
-        # Base response model for provider responses.
-        #
-        # This class represents the standard response structure from AI providers
-        # across different services (OpenAI, Anthropic, etc.). It provides a unified
-        # interface for accessing response data, usage statistics, and request context.
+        # Provides unified interface for AI provider responses across OpenAI, Anthropic, etc.
         #
         # @abstract Subclass and override {#usage} if provider uses non-standard format
         #
-        # @note This is a base class. Use specialized subclasses for specific response types:
-        #   - {Prompt} for conversational/completion responses with messages
-        #   - {Embed} for embedding responses with vector data
+        # @note Use specialized subclasses for specific response types:
+        #   - {Prompt} for conversational/completion responses
+        #   - {Embed} for embedding responses
         #
         # @example Accessing response data
         #   response = agent.prompt.generate_now
@@ -34,92 +30,168 @@ module ActiveAgent
         # @see BaseModel
         class Base < BaseModel
           # @!attribute [r] context
-          #   The original context that was sent to the provider.
+          #   Original request context sent to the provider.
           #
-          #   Contains structured information about the request including instructions,
-          #   messages, tools, and other configuration passed to the LLM.
+          #   Includes instructions, messages, tools, and configuration.
           #
-          #   @return [Hash] the request context
+          #   @return [Hash]
           attribute :context, writable: false
 
           # @!attribute [r] raw_request
-          #   The most recent request in provider-specific format.
+          #   Most recent request in provider-specific format.
           #
-          #   Contains the actual API request payload sent to the provider,
-          #   useful for debugging and logging.
+          #   Useful for debugging and logging.
           #
-          #   @return [Hash] the provider-formatted request
+          #   @return [Hash]
           attribute :raw_request, writable: false
 
           # @!attribute [r] raw_response
-          #   The most recent response in provider-specific format.
+          #   Most recent response in provider-specific format.
           #
-          #   Contains the raw API response from the provider, including all
-          #   metadata, usage stats, and provider-specific fields.
+          #   Includes metadata, usage stats, and provider-specific fields.
+          #   Hash keys are deep symbolized for consistent access.
           #
-          #   @return [Hash] the provider-formatted response
+          #   @return [Hash]
           attribute :raw_response, writable: false
 
-          # Initializes a new response object with deep-duplicated attributes.
+          # @!attribute [r] usages
+          #   Usage objects from each API call in multi-turn conversations.
           #
-          # Deep duplication ensures that the response object maintains its own
-          # independent copy of the data, preventing external modifications from
-          # affecting the response's internal state.
+          #   Each call (e.g., for tool calling) tracks usage separately. These are
+          #   summed to provide cumulative statistics via {#usage}.
           #
-          # @param kwargs [Hash] response attributes
-          # @option kwargs [Hash] :context the original request context
-          # @option kwargs [Hash] :raw_request the provider-formatted request
-          # @option kwargs [Hash] :raw_response the provider-formatted response
+          #   @return [Array<Usage>]
+          attribute :usages, default: -> { [] }, writable: false
+
+          # Initializes response with deep-duplicated attributes.
           #
-          # @return [Base] the initialized response object
+          # Deep duplication prevents external modifications from affecting internal state.
+          # The raw_response is deep symbolized for consistent key access across providers.
+          #
+          # @param kwargs [Hash]
+          # @option kwargs [Hash] :context
+          # @option kwargs [Hash] :raw_request
+          # @option kwargs [Hash] :raw_response
           def initialize(kwargs = {})
-            super(kwargs.deep_dup) # Ensure that userland can't fuck with our memory space
+            kwargs = kwargs.deep_dup # Ensure that userland can't fuck with our memory space
+
+            # Deep symbolize raw_response for consistent access across all extraction methods
+            if kwargs[:raw_response].is_a?(Hash)
+              kwargs[:raw_response] = kwargs[:raw_response].deep_symbolize_keys
+            end
+
+            super(kwargs)
           end
 
-          # Extracts instructions from the context.
-          #
-          # @return [String, Array<Hash>, nil] the instructions that were sent to the provider
+          # @return [String, Array<Hash>, nil]
           def instructions
             context[:instructions]
           end
 
-          # Indicates whether the generation request was successful.
-          #
           # @todo Better handling of failure flows
-          #
-          # @return [Boolean] true if successful, false otherwise
+          # @return [Boolean]
           def success?
             true
           end
 
-          # Returns normalized usage statistics across all providers.
+          # Normalized usage statistics across all providers.
           #
-          # This method provides a consistent interface for accessing token usage
-          # regardless of the underlying provider. It automatically detects the
-          # provider format and returns a {Usage} object with normalized fields.
+          # For multi-turn conversations with tool calling, returns cumulative
+          # usage across all API calls (sum of {#usages}).
           #
-          # @return [Usage, nil] normalized usage object, or nil if not available
+          # @return [Usage, nil]
           #
-          # @example Accessing normalized usage
+          # @example Single-turn usage
           #   response.usage.input_tokens      #=> 100
           #   response.usage.output_tokens     #=> 25
           #   response.usage.total_tokens      #=> 125
-          #   response.usage.cached_tokens     #=> 20 (if available)
+          #
+          # @example Multi-turn usage (cumulative)
+          #   # After 3 API calls due to tool usage:
+          #   response.usage.input_tokens      #=> 350 (sum of all calls)
+          #   response.usage.output_tokens     #=> 120 (sum of all calls)
           #
           # @see Usage
           def usage
             @usage ||= begin
-              return nil unless raw_response
-
-              # Extract raw usage hash from provider response
-              # Support both string and symbol keys for compatibility
-              raw_usage = if raw_response.is_a?(Hash)
-                raw_response["usage"] || raw_response[:usage]
+              if usages.any?
+                usages.reduce(:+)
+              elsif raw_response
+                Usage.from_provider_usage(
+                  raw_response.is_a?(Hash) ? raw_response[:usage] : raw_response.usage
+                )
               end
-
-              Usage.from_provider_usage(raw_usage)
             end
           end
+
+          # Response ID from provider, useful for tracking and debugging.
+          #
+          # @return [String, nil]
+          #
+          # @example
+          #   response.id  #=> "chatcmpl-CbDx1nXoNSBrNIMhiuy5fk7jXQjmT" (OpenAI)
+          #   response.id  #=> "msg_01RotDmSnYpKQjrTpaHUaEBz" (Anthropic)
+          #   response.id  #=> "gen-1761505659-yxgaVsqVABMQqw6oA7QF" (OpenRouter)
+          def id
+            @id ||= begin
+              return nil unless raw_response
+
+              if raw_response.is_a?(Hash)
+                raw_response[:id]
+              elsif raw_response.respond_to?(:id)
+                raw_response.id
+              end
+            end
+          end
+
+          # Model name from provider response.
+          #
+          # Useful for confirming which model was actually used, as providers may
+          # use different versions than requested.
+          #
+          # @return [String, nil]
+          #
+          # @example
+          #   response.model  #=> "gpt-4o-mini-2024-07-18"
+          #   response.model  #=> "claude-3-5-haiku-20241022"
+          def model
+            @model ||= begin
+              return nil unless raw_response
+
+              if raw_response.is_a?(Hash)
+                raw_response[:model]
+              elsif raw_response.respond_to?(:model)
+                raw_response.model
+              end
+            end
+          end
+
+          # Finish reason from provider response.
+          #
+          # Indicates why generation stopped (e.g., "stop", "length", "tool_calls").
+          # Normalizes access across providers that use different field names.
+          #
+          # @return [String, nil]
+          #
+          # @example
+          #   response.finish_reason  #=> "stop"
+          #   response.finish_reason  #=> "length"
+          #   response.finish_reason  #=> "tool_calls"
+          #   response.stop_reason    #=> "stop" (alias)
+          def finish_reason
+            @finish_reason ||= begin
+              return nil unless raw_response
+
+              if raw_response.is_a?(Hash)
+                # OpenAI format: choices[0].finish_reason or choices[0].message.finish_reason
+                raw_response.dig(:choices, 0, :finish_reason) ||
+                  raw_response.dig(:choices, 0, :message, :finish_reason) ||
+                  # Anthropic format: stop_reason
+                  raw_response[:stop_reason]
+              end
+            end
+          end
+          alias_method :stop_reason, :finish_reason
         end
       end
     end

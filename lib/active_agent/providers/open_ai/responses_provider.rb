@@ -30,6 +30,15 @@ module ActiveAgent
           client.responses
         end
 
+        # @see BaseProvider#api_response_normalize
+        # @param api_response [OpenAI::Models::Responses::Response]
+        # @return [Hash] normalized response hash
+        def api_response_normalize(api_response)
+          return api_response unless api_response
+
+          Responses::Transforms.gem_to_hash(api_response)
+        end
+
         # Processes streaming response chunks from the Responses API
         #
         # Event types handled:
@@ -48,7 +57,7 @@ module ActiveAgent
         # @return [void]
         # @see Base#process_stream_chunk
         def process_stream_chunk(api_response_event)
-          instrument("stream_chunk_processing.provider.active_agent", chunk_type: api_response_event.type)
+          instrument("stream_chunk.active_agent", chunk_type: api_response_event.type)
 
           case api_response_event.type
           # Response Created
@@ -143,12 +152,14 @@ module ActiveAgent
         # @see Base#process_function_calls
         def process_function_calls(api_function_calls)
           api_function_calls.each do |api_function_call|
-            instrument("tool_execution.provider.active_agent", tool_name: api_function_call[:name])
+            output = instrument("tool_call.active_agent", tool_name: api_function_call[:name]) do
+              process_tool_call_function(api_function_call).to_json
+            end
 
             # Create native gem input item for function call output
             message = ::OpenAI::Models::Responses::ResponseInputItem::FunctionCallOutput.new(
               call_id: api_function_call[:call_id],
-              output:  process_tool_call_function(api_function_call).to_json
+              output:
             )
 
             # Convert to hash for message_stack

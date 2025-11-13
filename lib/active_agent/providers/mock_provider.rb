@@ -112,7 +112,7 @@ module ActiveAgent
       def process_stream_chunk(api_response_chunk)
         chunk_type = api_response_chunk[:type]&.to_sym
 
-        instrument("stream_chunk_processing.provider.active_agent", chunk_type: chunk_type)
+        instrument("stream_chunk.active_agent", chunk_type: chunk_type)
 
         broadcast_stream_open
 
