@@ -111,6 +111,29 @@ Template paths:
 
 ### Added
 
+**Universal Tools Format**
+```ruby
+# Single format works across all providers (Anthropic, OpenAI, OpenRouter, Ollama, Mock)
+tools: [{
+  name: "get_weather",
+  description: "Get current weather",
+  parameters: {
+    type: "object",
+    properties: {
+      location: { type: "string", description: "City and state" }
+    },
+    required: ["location"]
+  }
+}]
+
+# Tool choice normalization
+tool_choice: "auto"                   # Let model decide
+tool_choice: "required"               # Force tool use
+tool_choice: { name: "get_weather" }  # Force specific tool
+```
+
+Automatic conversion to provider-specific formats. Old formats still work (backward compatible).
+
 **Mock Provider for Testing**
 ```ruby
 class MyAgent < ActiveAgent::Base
@@ -196,6 +219,7 @@ response.usage.service_tier       # Anthropic
 - Retry logic moved to provider SDKs (automatic exponential backoff)
 - Migrated to official SDKs: `openai` gem and `anthropic` gem
 - Type-safe options with per-provider definitions
+- Shared `ToolChoiceClearing` concern eliminates duplication across providers
 
 **Configuration**
 - Options configurable at class level, instance level, or per-call
