@@ -77,10 +77,18 @@ module ActiveAgent
             params[:tools] = Responses::Transforms.normalize_tools(params[:tools]) if params[:tools]
             params[:tool_choice] = Responses::Transforms.normalize_tool_choice(params[:tool_choice]) if params[:tool_choice]
 
-            # Step 8: Create gem model - delegates to OpenAI gem
+            # Step 8: Normalize MCP servers from common format
+            # OpenAI treats MCP servers as a special type of tool in the tools array
+            if params[:mcp_servers]&.any?
+              normalized_mcp_tools = Responses::Transforms.normalize_mcp_servers(params.delete(:mcp_servers))
+              # Merge MCP servers into tools array
+              params[:tools] = (params[:tools] || []) + normalized_mcp_tools
+            end
+
+            # Step 9: Create gem model - delegates to OpenAI gem
             gem_model = ::OpenAI::Models::Responses::ResponseCreateParams.new(**params)
 
-            # Step 8: Delegate all method calls to gem model
+            # Step 10: Delegate all method calls to gem model
             super(gem_model)
           rescue ArgumentError => e
             # Re-raise with more context
