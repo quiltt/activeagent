@@ -12,6 +12,8 @@ module ActiveAgent
       # @see Base
       # @see https://platform.openai.com/docs/api-reference/chat
       class ChatProvider < Base
+        include ToolChoiceClearing
+
         # @return [Class] the options class for this provider
         def self.options_klass
           Options
@@ -37,30 +39,32 @@ module ActiveAgent
           super
         end
 
-        # @api private
-        def prepare_prompt_request_tools
-          return unless request.tool_choice
-
-          # Get list of function calls that have been made
-          # In Chat API, tool calls are in the assistant message's tool_calls array
-          functions_used = message_stack
+        # Extracts function names from Chat API tool_calls in assistant messages.
+        #
+        # @return [Array<String>]
+        def extract_used_function_names
+          message_stack
             .select { |msg| msg[:role] == "assistant" && msg[:tool_calls] }
             .flat_map { |msg| msg[:tool_calls] }
             .map { |tc| tc.dig(:function, :name) }
             .compact
+        end
 
-          # Check if tool_choice is a hash (specific tool) or string (auto/required)
+        # Returns true if tool_choice == "required".
+        #
+        # @return [Boolean]
+        def tool_choice_forces_required?
+          request.tool_choice == "required"
+        end
+
+        # Returns [true, name] if tool_choice is a hash with nested function name.
+        #
+        # @return [Array<Boolean, String|nil>]
+        def tool_choice_forces_specific?
           if request.tool_choice.is_a?(Hash)
-            # Specific tool choice - clear if that tool was used
-            tool_choice_name = request.tool_choice.dig(:function, :name)
-            if tool_choice_name && functions_used.include?(tool_choice_name)
-              request.tool_choice = nil
-            end
-          elsif request.tool_choice == "required"
-            # Required tool choice - clear if any tool was used
-            if functions_used.any?
-              request.tool_choice = nil
-            end
+            [ true, request.tool_choice.dig(:function, :name) ]
+          else
+            [ false, nil ]
           end
         end
 
