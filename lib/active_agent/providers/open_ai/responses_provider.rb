@@ -25,6 +25,40 @@ module ActiveAgent
 
         protected
 
+        # @see BaseProvider#prepare_prompt_request
+        # @return [Request]
+        def prepare_prompt_request
+          prepare_prompt_request_tools
+
+          super
+        end
+
+        # @api private
+        def prepare_prompt_request_tools
+          return unless request.tool_choice
+
+          # Get list of function calls that have been made
+          # In Responses API, message_stack items are flat - each item has a type field
+          functions_used = message_stack
+            .select { |item| item[:type] == "function_call" }
+            .map { |item| item[:name] }
+            .compact
+
+          # Check if tool_choice is a gem model object or symbol
+          if request.tool_choice.is_a?(::OpenAI::Models::Responses::ToolChoiceFunction)
+            # Specific tool choice - clear if that tool was used
+            tool_choice_name = request.tool_choice.name
+            if tool_choice_name && functions_used.include?(tool_choice_name)
+              request.tool_choice = nil
+            end
+          elsif request.tool_choice == :required
+            # Required tool choice - clear if any tool was used
+            if functions_used.any?
+              request.tool_choice = nil
+            end
+          end
+        end
+
         # @return [Object] OpenAI client's responses endpoint
         def api_prompt_executer
           client.responses
