@@ -10,7 +10,7 @@ module Docs
 
           def forecast
             prompt(
-              message: "What's the weather like?",
+              "What's the weather like?",
               mcps: [ { name: "weather", url: "https://demo-day.mcp.cloudflare.com/sse" } ]
             )
           end
@@ -35,7 +35,7 @@ module Docs
 
           def analyze
             prompt(
-              message: "Analyze the latest data",
+              "Analyze the latest data",
               mcps: [ { name: "cloudflare-demo", url: "https://demo-day.mcp.cloudflare.com/sse" } ]
             )
           end
@@ -60,7 +60,7 @@ module Docs
 
           def research
             prompt(
-              input: "Research the latest AI developments",
+              "Research the latest AI developments",
               mcps: [
                 { name: "cloudflare", url: "https://demo-day.mcp.cloudflare.com/sse" },
                 { name: "github", url: "https://api.githubcopilot.com/mcp/", authorization: ENV["GITHUB_MCP_TOKEN"] }
@@ -88,7 +88,7 @@ module Docs
 
           def analyze_data
             prompt(
-              input: "Calculate and fetch data",
+              "Calculate and fetch data",
               tools: [ {
                 name: "calculate",
                 description: "Perform calculations",

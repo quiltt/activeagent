@@ -134,6 +134,33 @@ tool_choice: { name: "get_weather" }  # Force specific tool
 
 Automatic conversion to provider-specific formats. Old formats still work (backward compatible).
 
+**Model Context Protocol (MCP) Support**
+```ruby
+# Universal MCP format works across providers (Anthropic, OpenAI)
+class MyAgent < ActiveAgent::Base
+  generate_with :anthropic, model: "claude-haiku-4-5"
+
+  def research
+    prompt(
+      message: "Research AI developments",
+      mcps: [{
+        name: "github",
+        url: "https://api.githubcopilot.com/mcp/",
+        authorization: ENV["GITHUB_MCP_TOKEN"]
+      }]
+    )
+  end
+end
+```
+
+- Common format: `{name: "server", url: "https://...", authorization: "token"}`
+- Auto-converts to provider native formats
+- Anthropic: Beta API support, up to 20 servers per request
+- OpenAI: Responses API with pre-built connectors (Dropbox, Google Drive, etc.)
+- Backwards compatible: accepts both `mcps` and `mcp_servers` parameters
+- Comprehensive documentation with tested examples
+- Full VCR test coverage with real MCP endpoints
+
 **Mock Provider for Testing**
 ```ruby
 class MyAgent < ActiveAgent::Base
