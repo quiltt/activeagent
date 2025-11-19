@@ -39,22 +39,31 @@ module ActiveAgent
         super
       end
 
-      # @api private
-      def prepare_prompt_request_tools
-        return unless request.tool_choice
-        return unless request.tool_choice.respond_to?(:type)
+      # Extracts function names from Anthropic's tool_use content blocks.
+      #
+      # @return [Array<String>]
+      def extract_used_function_names
+        message_stack.pluck(:content).flatten.select { _1[:type] == "tool_use" }.pluck(:name)
+      end
 
-        functions_used = message_stack.pluck(:content).flatten.select { _1[:type] == "tool_use" }.pluck(:name)
+      # Returns true if tool_choice forces any tool use (type == :any).
+      #
+      # @return [Boolean]
+      def tool_choice_forces_required?
+        return false unless request.tool_choice.respond_to?(:type)
 
-        # tool_choice is always a gem model object (ToolChoiceAny, ToolChoiceTool, ToolChoiceAuto)
-        tool_choice_type = request.tool_choice.type
-        tool_choice_name = request.tool_choice.respond_to?(:name) ? request.tool_choice.name : nil
+        request.tool_choice.type == :any
+      end
 
-        if (tool_choice_type == :any && functions_used.any?) ||
-          (tool_choice_type == :tool && tool_choice_name && functions_used.include?(tool_choice_name))
+      # Returns [true, name] if tool_choice forces a specific tool (type == :tool).
+      #
+      # @return [Array<Boolean, String|nil>]
+      def tool_choice_forces_specific?
+        return [ false, nil ] unless request.tool_choice.respond_to?(:type)
+        return [ false, nil ] unless request.tool_choice.type == :tool
 
-          request.tool_choice = nil
-        end
+        tool_name = request.tool_choice.respond_to?(:name) ? request.tool_choice.name : nil
+        [ true, tool_name ]
       end
 
       # @api private
