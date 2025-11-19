@@ -77,9 +77,14 @@ module ActiveAgent
       end
 
       # @see BaseProvider#api_prompt_executer
-      # @return [Anthropic::Messages]
+      # @return [Anthropic::Messages, Anthropic::Resources::Beta::Messages]
       def api_prompt_executer
-        client.messages
+        # Use beta API when anthropic_beta option is set or when using MCP servers
+        if options.anthropic_beta.present? || request.mcp_servers&.any?
+          client.beta.messages
+        else
+          client.messages
+        end
       end
 
       # @see BaseProvider#api_response_normalize
