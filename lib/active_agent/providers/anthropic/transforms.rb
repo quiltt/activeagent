@@ -30,7 +30,14 @@ module ActiveAgent
             params[:system] = normalize_system(params[:system]) if params[:system]
             params[:tools] = normalize_tools(params[:tools]) if params[:tools]
             params[:tool_choice] = normalize_tool_choice(params[:tool_choice]) if params[:tool_choice]
-            params[:mcp_servers] = normalize_mcp_servers(params[:mcp_servers]) if params[:mcp_servers]
+
+            # Handle mcps parameter (common format) -> transforms to mcp_servers (provider format)
+            if params[:mcps]
+              params[:mcp_servers] = normalize_mcp_servers(params.delete(:mcps))
+            elsif params[:mcp_servers]
+              params[:mcp_servers] = normalize_mcp_servers(params[:mcp_servers])
+            end
+
             params
           end
 

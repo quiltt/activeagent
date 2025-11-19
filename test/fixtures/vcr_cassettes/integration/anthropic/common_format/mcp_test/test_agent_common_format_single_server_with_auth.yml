@@ -48,7 +48,7 @@ http_interactions:
       message: OK
     headers:
       Date:
-      - Wed, 19 Nov 2025 20:31:12 GMT
+      - Wed, 19 Nov 2025 20:59:12 GMT
       Content-Type:
       - application/json
       Transfer-Encoding:
@@ -60,35 +60,35 @@ http_interactions:
       Anthropic-Ratelimit-Input-Tokens-Remaining:
       - '3996000'
       Anthropic-Ratelimit-Input-Tokens-Reset:
-      - '2025-11-19T20:31:06Z'
+      - '2025-11-19T20:59:06Z'
       Anthropic-Ratelimit-Output-Tokens-Limit:
       - '800000'
       Anthropic-Ratelimit-Output-Tokens-Remaining:
       - '799000'
       Anthropic-Ratelimit-Output-Tokens-Reset:
-      - '2025-11-19T20:31:12Z'
+      - '2025-11-19T20:59:12Z'
       Anthropic-Ratelimit-Requests-Limit:
       - '4000'
       Anthropic-Ratelimit-Requests-Remaining:
       - '3999'
       Anthropic-Ratelimit-Requests-Reset:
-      - '2025-11-19T20:31:02Z'
+      - '2025-11-19T20:59:05Z'
       Retry-After:
-      - '55'
+      - '54'
       Anthropic-Ratelimit-Tokens-Limit:
       - '4800000'
       Anthropic-Ratelimit-Tokens-Remaining:
       - '4795000'
       Anthropic-Ratelimit-Tokens-Reset:
-      - '2025-11-19T20:31:06Z'
+      - '2025-11-19T20:59:06Z'
       Request-Id:
-      - req_011CVHt9VnkciWVkKLsE3Mro
+      - req_011CVHvHXJkDbCcfzBei8kHK
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
       Anthropic-Organization-Id:
       - 2557c2f2-bcfa-4054-9fa8-ae13b3b47d6b
       X-Envoy-Upstream-Service-Time:
-      - '10287'
+      - '7073'
       Cf-Cache-Status:
       - DYNAMIC
       X-Robots-Tag:
@@ -96,45 +96,46 @@ http_interactions:
       Server:
       - cloudflare
       Cf-Ray:
-      - 9a1278087e2a50a1-SJC
+      - 9a12a11c3cea3ad4-SJC
     body:
       encoding: ASCII-8BIT
-      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_011My4uTh5XocRzomwbE1Pz2","type":"message","role":"assistant","content":[{"type":"text","text":"I
-        have access to a comprehensive set of GitHub tools that allow me to interact
-        with repositories, pull requests, issues, and more. Here''s what I can do:\n\n##
-        Repository Management\n- **Create repositories** - Set up new public or private
-        repos\n- **Fork repositories** - Fork existing projects to your account/organization\n-
-        **Search repositories** - Find repos by name, description, topics, etc.\n-
-        **Get repository contents** - View files and directory structures\n\n## Branches
-        & Commits\n- **Create branches** - Make new branches from existing ones\n-
-        **List branches** - View all branches in a repository\n- **List commits**
-        - See commit history with filtering options\n- **Get commit details** - View
-        specific commit information with diffs\n\n## Issues Management\n- **Create/update
-        issues** - Create new issues or modify existing ones\n- **Read issue details**
-        - Get issue information, comments, sub-issues, labels\n- **List issues** -
-        View issues with filtering and sorting\n- **Search issues** - Find issues
-        across repositories\n- **Manage sub-issues** - Add, remove, or reprioritize
-        sub-issues\n- **Add issue comments** - Comment on issues\n\n## Pull Requests\n-
-        **Create pull requests** - Open new PRs with custom titles and descriptions\n-
-        **Read PR details** - Get PR info, diffs, status, files changed, comments,
-        reviews\n- **List/search PRs** - Find pull requests with various filters\n-
-        **Update PRs** - Modify PR title, description, state, reviewers\n- **Update
-        PR branch** - Sync PR with latest base branch changes\n- **Merge PRs** - Merge
-        with different strategies (merge, squash, rebase)\n- **PR Reviews** - Create,
-        submit, or delete reviews; add review comments\n\n## Files\n- **Create/update
-        files** - Add or modify files in repositories\n- **Delete files** - Remove
-        files from repositories\n- **Push multiple files** - Commit multiple files
-        in one go\n\n## Tags & Releases\n- **List tags** - View git tags in a repository\n-
-        **Get tag details** - Get specific tag information\n- **List releases** -
-        View releases\n- **Get release details** - Get specific release or latest
-        release information\n\n## Users & Teams\n- **Get authenticated user info**
-        - View your own GitHub profile details\n- **Search users** - Find GitHub users
-        by name or profile info\n- **Get team members** - View members of specific
-        teams\n- **Get user teams** - See teams a user belongs to\n\n## Code Search\n-
-        **Search code** - Fast code search across repositories using GitHub''s search
-        engine\n\n## Additional\n- **Request Copilot code review** - Get automated
-        feedback on pull requests\n- **Assign Copilot to issues** - Have me work on
-        resolving issues\n\nIs there anything specific you''d like me to help you
-        with?"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":9567,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":631,"service_tier":"standard"}}'
-  recorded_at: Wed, 19 Nov 2025 20:31:12 GMT
+      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_01D2wEkim3w3rBRjFVvgxTBV","type":"message","role":"assistant","content":[{"type":"text","text":"I
+        have a comprehensive set of tools for interacting with GitHub. Here''s an
+        overview of what I can do:\n\n## Repository Management\n- **Create repositories**
+        - Create new repositories in your account or organization\n- **Fork repositories**
+        - Fork existing repositories\n- **List branches** - View branches in a repository\n-
+        **List commits** - Get commit history with filtering options\n- **List tags**
+        - View git tags in a repository\n- **List releases** - View releases in a
+        repository\n\n## File Operations\n- **Get file contents** - Read files or
+        directory contents from repositories\n- **Create or update files** - Create
+        new files or update existing ones\n- **Delete files** - Remove files from
+        repositories\n- **Push multiple files** - Commit multiple files in a single
+        operation\n- **Get commits** - Get detailed information about specific commits\n\n##
+        Issues Management\n- **Create/update issues** - Create new issues or update
+        existing ones\n- **Read issues** - Get issue details, comments, labels, and
+        sub-issues\n- **List issues** - List issues with filtering and sorting\n-
+        **Search issues** - Search across issues using GitHub''s search syntax\n-
+        **Add issue comments** - Comment on issues\n- **Assign Copilot to issues**
+        - Have GitHub Copilot work on tasks\n\n## Pull Requests\n- **Create pull requests**
+        - Create new PRs\n- **Read pull requests** - Get PR details, diffs, files
+        changed, comments, and reviews\n- **List pull requests** - List PRs with filtering\n-
+        **Search pull requests** - Search for PRs across repositories\n- **Update
+        pull requests** - Modify PR title, description, base branch, reviewers, and
+        state\n- **Update PR branch** - Sync PR branch with base branch\n- **Merge
+        pull requests** - Merge PRs with different merge strategies\n- **PR reviews**
+        - Create, submit, or delete pull request reviews\n- **Review comments** -
+        Add comments to pending pull request reviews\n\n## Search & Discovery\n- **Search
+        code** - Search across all GitHub repositories for code patterns\n- **Search
+        repositories** - Find repositories by name, description, topics, etc.\n- **Search
+        users** - Find GitHub users\n- **Search issues** - Search for issues across
+        repositories\n- **Search pull requests** - Search for pull requests across
+        repositories\n\n## Teams & Users\n- **Get user profile** - Get details about
+        the authenticated user\n- **Get teams** - View teams you''re a member of\n-
+        **Get team members** - List members of a specific team\n\n## Releases & Tags\n-
+        **Get latest release** - Get the most recent release\n- **Get release by tag**
+        - Get a specific release by tag name\n- **Get tag details** - Get information
+        about a specific git tag\n\n## Labels\n- **Get label** - Get details about
+        a specific label in a repository\n\nIs there something specific you''d like
+        to do with GitHub?"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":9567,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":634,"service_tier":"standard"}}'
+  recorded_at: Wed, 19 Nov 2025 20:59:12 GMT
 recorded_with: VCR 6.3.1

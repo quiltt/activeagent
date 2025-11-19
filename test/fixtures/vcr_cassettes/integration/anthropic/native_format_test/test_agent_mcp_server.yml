@@ -48,7 +48,7 @@ http_interactions:
       message: OK
     headers:
       Date:
-      - Wed, 19 Nov 2025 20:50:18 GMT
+      - Wed, 19 Nov 2025 20:58:57 GMT
       Content-Type:
       - application/json
       Transfer-Encoding:
@@ -60,35 +60,35 @@ http_interactions:
       Anthropic-Ratelimit-Input-Tokens-Remaining:
       - '2000000'
       Anthropic-Ratelimit-Input-Tokens-Reset:
-      - '2025-11-19T20:50:17Z'
+      - '2025-11-19T20:58:55Z'
       Anthropic-Ratelimit-Output-Tokens-Limit:
       - '400000'
       Anthropic-Ratelimit-Output-Tokens-Remaining:
       - '400000'
       Anthropic-Ratelimit-Output-Tokens-Reset:
-      - '2025-11-19T20:50:18Z'
+      - '2025-11-19T20:58:57Z'
       Anthropic-Ratelimit-Requests-Limit:
       - '4000'
       Anthropic-Ratelimit-Requests-Remaining:
       - '3999'
       Anthropic-Ratelimit-Requests-Reset:
-      - '2025-11-19T20:50:15Z'
+      - '2025-11-19T20:58:53Z'
       Retry-After:
-      - '44'
+      - '5'
       Anthropic-Ratelimit-Tokens-Limit:
       - '2400000'
       Anthropic-Ratelimit-Tokens-Remaining:
       - '2400000'
       Anthropic-Ratelimit-Tokens-Reset:
-      - '2025-11-19T20:50:17Z'
+      - '2025-11-19T20:58:55Z'
       Request-Id:
-      - req_011CVHucNXpL4ZPbJzgT2Z69
+      - req_011CVHvGc3DtPq6RQto2kWgz
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
       Anthropic-Organization-Id:
       - 2557c2f2-bcfa-4054-9fa8-ae13b3b47d6b
       X-Envoy-Upstream-Service-Time:
-      - '4865'
+      - '5322'
       Cf-Cache-Status:
       - DYNAMIC
       X-Robots-Tag:
@@ -96,13 +96,15 @@ http_interactions:
       Server:
       - cloudflare
       Cf-Ray:
-      - 9a1294248fef31f4-SJC
+      - 9a12a0ce1e6e7af1-SJC
     body:
       encoding: ASCII-8BIT
-      string: '{"model":"claude-sonnet-4-5-20250929","id":"msg_01SoVDRqmrw4zWsNMChbZ9dZ","type":"message","role":"assistant","content":[{"type":"text","text":"I
-        have access to one tool:\n\n**Cloudflare MCP Demo Day Info** - This tool gets
-        information about Cloudflare''s MCP Demo Day. I can use it to answer questions
-        about Cloudflare''s MCP demo day event.\n\nIf you''d like to know more about
-        Cloudflare''s MCP Demo Day, I''d be happy to fetch that information for you!"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":585,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":87,"service_tier":"standard"}}'
-  recorded_at: Wed, 19 Nov 2025 20:50:18 GMT
+      string: '{"model":"claude-sonnet-4-5-20250929","id":"msg_01JdaKsKdYckuGXMYcz1pRVS","type":"message","role":"assistant","content":[{"type":"text","text":"I
+        have access to one specialized tool:\n\n1. **cloudflare-demo_mcp_demo_day_info**
+        - This tool provides information about Cloudflare''s MCP Demo Day. I can use
+        it to answer questions about Cloudflare''s MCP demo day event.\n\nThis appears
+        to be a specialized assistant focused on providing information about Cloudflare''s
+        MCP (Model Context Protocol) Demo Day. If you have any questions about that
+        event, feel free to ask and I''ll retrieve the information for you!"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":585,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":115,"service_tier":"standard"}}'
+  recorded_at: Wed, 19 Nov 2025 20:58:57 GMT
 recorded_with: VCR 6.3.1
