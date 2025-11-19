@@ -55,7 +55,6 @@ class ActionsExamplesTest < ActiveSupport::TestCase
         prompt(
           input: "What's the weather in Boston?",
           tools: [ {
-            type: "function",
             name: "get_current_weather",
             description: "Get the current weather in a given location",
             parameters: {
