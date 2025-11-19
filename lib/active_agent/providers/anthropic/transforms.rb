@@ -30,6 +30,7 @@ module ActiveAgent
             params[:system] = normalize_system(params[:system]) if params[:system]
             params[:tools] = normalize_tools(params[:tools]) if params[:tools]
             params[:tool_choice] = normalize_tool_choice(params[:tool_choice]) if params[:tool_choice]
+            params[:mcp_servers] = normalize_mcp_servers(params[:mcp_servers]) if params[:mcp_servers]
             params
           end
 
@@ -55,6 +56,44 @@ module ActiveAgent
               end
 
               tool_hash
+            end
+          end
+
+          # Normalizes MCP servers from common format to Anthropic format.
+          #
+          # Common format:
+          #   {name: "stripe", url: "https://...", authorization: "token"}
+          # Anthropic format:
+          #   {type: "url", name: "stripe", url: "https://...", authorization_token: "token"}
+          #
+          # @param mcp_servers [Array<Hash>]
+          # @return [Array<Hash>]
+          def normalize_mcp_servers(mcp_servers)
+            return mcp_servers unless mcp_servers.is_a?(Array)
+
+            mcp_servers.map do |server|
+              server_hash = server.is_a?(Hash) ? server.deep_symbolize_keys : server
+
+              # If already in Anthropic format (has type: "url" and authorization_token), return as-is
+              if server_hash[:type] == "url" && !server_hash[:authorization]
+                next server_hash
+              end
+
+              # Convert common format to Anthropic format
+              result = {
+                type: "url",
+                name: server_hash[:name],
+                url: server_hash[:url]
+              }
+
+              # Map 'authorization' to 'authorization_token'
+              if server_hash[:authorization]
+                result[:authorization_token] = server_hash[:authorization]
+              elsif server_hash[:authorization_token]
+                result[:authorization_token] = server_hash[:authorization_token]
+              end
+
+              result.compact
             end
           end
 
@@ -398,9 +437,9 @@ module ActiveAgent
             # Apply content compression for API efficiency
             compress_content(hash)
 
-            # Remove provider-internal fields that should not be in API request
-            hash.delete(:mcp_servers)   # Provider-level config, not API param
+            # Remove provider-internal fields and empty arrays
             hash.delete(:stop_sequences) if hash[:stop_sequences] == []
+            hash.delete(:mcp_servers) if hash[:mcp_servers] == []
             hash.delete(:tool_choice) if hash[:tool_choice].nil?  # Don't send null tool_choice
 
             # Remove default values (except max_tokens which is required by API)
