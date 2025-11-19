@@ -81,8 +81,9 @@ module ActiveAgent
             mcp_servers.map do |server|
               server_hash = server.is_a?(Hash) ? server.deep_symbolize_keys : server
 
-              # If already in Anthropic format (has type: "url" and authorization_token), return as-is
-              if server_hash[:type] == "url" && !server_hash[:authorization]
+              # If already in Anthropic native format (has type: "url"), return as-is
+              # Check for absence of common format 'authorization' field OR presence of native 'authorization_token'
+              if server_hash[:type] == "url" && (server_hash[:authorization_token] || !server_hash[:authorization])
                 next server_hash
               end
 

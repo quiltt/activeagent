@@ -587,7 +587,7 @@ module Providers
         assert_nil result[0][:authorization_token]
       end
 
-      test "normalize_mcp_servers preserves Anthropic format" do
+      test "normalize_mcp_servers preserves Anthropic format without auth" do
         mcp_servers = [
           {
             type: "url",
@@ -601,6 +601,46 @@ module Providers
         assert_equal 1, result.size
         assert_equal "url", result[0][:type]
         assert_equal "stripe", result[0][:name]
+        assert_equal "https://mcp.stripe.com", result[0][:url]
+      end
+
+      test "normalize_mcp_servers preserves Anthropic format with authorization_token" do
+        mcp_servers = [
+          {
+            type: "url",
+            name: "stripe",
+            url: "https://mcp.stripe.com",
+            authorization_token: "sk_test_123"
+          }
+        ]
+
+        result = transforms.normalize_mcp_servers(mcp_servers)
+
+        assert_equal 1, result.size
+        assert_equal "url", result[0][:type]
+        assert_equal "stripe", result[0][:name]
+        assert_equal "https://mcp.stripe.com", result[0][:url]
+        assert_equal "sk_test_123", result[0][:authorization_token]
+      end
+
+      test "normalize_mcp_servers converts common format with authorization to native" do
+        mcp_servers = [
+          {
+            type: "url",
+            name: "test",
+            url: "https://test.com",
+            authorization: "token123"  # Common format field, should be converted
+          }
+        ]
+
+        result = transforms.normalize_mcp_servers(mcp_servers)
+
+        assert_equal 1, result.size
+        assert_equal "url", result[0][:type]
+        assert_equal "test", result[0][:name]
+        assert_equal "https://test.com", result[0][:url]
+        assert_equal "token123", result[0][:authorization_token]
+        assert_nil result[0][:authorization]  # Should not have common format field
       end
 
       test "normalize_mcp_servers handles multiple servers" do
