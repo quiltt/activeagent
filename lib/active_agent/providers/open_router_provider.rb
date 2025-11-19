@@ -33,6 +33,40 @@ module ActiveAgent
 
       protected
 
+      # @see BaseProvider#prepare_prompt_request
+      # @return [Request]
+      def prepare_prompt_request
+        prepare_prompt_request_tools
+        super
+      end
+
+      # @api private
+      def prepare_prompt_request_tools
+        return unless request.tool_choice
+
+        # Get list of function calls that have been made
+        # In Chat API, tool calls are in the assistant message's tool_calls array
+        functions_used = message_stack
+          .select { |msg| msg[:role] == "assistant" && msg[:tool_calls] }
+          .flat_map { |msg| msg[:tool_calls] }
+          .map { |tc| tc.dig(:function, :name) }
+          .compact
+
+        # Check if tool_choice is a hash (specific tool) or string (auto/any)
+        if request.tool_choice.is_a?(Hash)
+          # Specific tool choice - clear if that tool was used
+          tool_choice_name = request.tool_choice.dig(:function, :name)
+          if tool_choice_name && functions_used.include?(tool_choice_name)
+            request.tool_choice = nil
+          end
+        elsif request.tool_choice == "any"
+          # OpenRouter uses "any" for required - clear if any tool was used
+          if functions_used.any?
+            request.tool_choice = nil
+          end
+        end
+      end
+
       # Merges streaming delta into the message with role cleanup.
       #
       # Overrides parent to handle OpenRouter's role copying behavior which duplicates
