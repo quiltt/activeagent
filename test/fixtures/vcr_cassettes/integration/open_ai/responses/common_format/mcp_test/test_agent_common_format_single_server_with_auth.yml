@@ -47,7 +47,7 @@ http_interactions:
       message: OK
     headers:
       Date:
-      - Wed, 19 Nov 2025 20:46:12 GMT
+      - Wed, 19 Nov 2025 21:00:39 GMT
       Content-Type:
       - application/json
       Transfer-Encoding:
@@ -61,7 +61,7 @@ http_interactions:
       X-Ratelimit-Remaining-Requests:
       - '14999'
       X-Ratelimit-Remaining-Tokens:
-      - '39999552'
+      - '39999374'
       X-Ratelimit-Reset-Requests:
       - 4ms
       X-Ratelimit-Reset-Tokens:
@@ -73,18 +73,18 @@ http_interactions:
       Openai-Project:
       - PROJECT_ID
       X-Request-Id:
-      - req_725ba7e71fda420a94b554e9145875e4
+      - req_4fe1b42247f54f5f8d08f449080c2496
       Openai-Processing-Ms:
-      - '18277'
+      - '27694'
       X-Envoy-Upstream-Service-Time:
-      - '18280'
+      - '27697'
       Cf-Cache-Status:
       - DYNAMIC
       Set-Cookie:
-      - __cf_bm=9Y5IzrkvtruiIpBJPjA_YtnMLViW09gnhXpCFU5MIr4-1763585172-1.0.1.1-2BtyiLqLt5Tk7jGO03TuGBSmxSEf9zkw7ePAewveycnA4zEyh1aeBbIl2repFN4fTRTSnVIx4O_4R9qCbIsypuWejk9VM9Z.hxB5QueNYsE;
-        path=/; expires=Wed, 19-Nov-25 21:16:12 GMT; domain=.api.openai.com; HttpOnly;
+      - __cf_bm=u_ixvNBnE_uGRZuW0BFA_8daa2YtGUUBZM67aDfW8uc-1763586039-1.0.1.1-O72bWYpsWBa.MQ7HvDBvHuK8fz0YIrTkhtSxt87JqzBfbt0LzJFK_hsNznbqDyJ3s74cJOowjnENWg7CcGFlfqSWMNubFfDBB7JROc67IVc;
+        path=/; expires=Wed, 19-Nov-25 21:30:39 GMT; domain=.api.openai.com; HttpOnly;
         Secure; SameSite=None
-      - _cfuvid=XS4xf6HTx0IcH9mL6bPrTEpDK9hIAo3tN57JX3FLGBk-1763585172364-0.0.1.1-604800000;
+      - _cfuvid=2yzg5PAukBYR91zDzzjZzZdvTx4n341kXd55hyf_nsQ-1763586039191-0.0.1.1-604800000;
         path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
@@ -93,16 +93,16 @@ http_interactions:
       Server:
       - cloudflare
       Cf-Ray:
-      - 9a128dcc7dd0fa62-SJC
+      - 9a12a2bac9e4270a-SJC
       Alt-Svc:
       - h3=":443"; ma=86400
     body:
       encoding: ASCII-8BIT
       string: |-
         {
-          "id": "resp_0bbb974cbbc378f500691e2c8216c0819891982946cb6cf0ad",
+          "id": "resp_0a1a94ff5963180600691e2fdb7c308195be8226e81298424c",
           "object": "response",
-          "created_at": 1763585154,
+          "created_at": 1763586011,
           "status": "completed",
           "background": false,
           "billing": {
@@ -116,7 +116,7 @@ http_interactions:
           "model": "gpt-5-2025-08-07",
           "output": [
             {
-              "id": "mcpl_0bbb974cbbc378f500691e2c82402c8198bdf001518e0d9a7e",
+              "id": "mcpl_0a1a94ff5963180600691e2fdbcd648195bf2aa0f4554487ee",
               "type": "mcp_list_tools",
               "server_label": "github_copilot",
               "tools": [
@@ -1840,12 +1840,12 @@ http_interactions:
               ]
             },
             {
-              "id": "rs_0bbb974cbbc378f500691e2c841370819897cf8a919e277e6a",
+              "id": "rs_0a1a94ff5963180600691e2fddabbc81959c66ce6978b890ef",
               "type": "reasoning",
               "summary": []
             },
             {
-              "id": "msg_0bbb974cbbc378f500691e2c925fe4819892ab87007a8a0f3a",
+              "id": "msg_0a1a94ff5963180600691e2ff3904c81958f84eb49da0196a1",
               "type": "message",
               "status": "completed",
               "content": [
@@ -1853,7 +1853,7 @@ http_interactions:
                   "type": "output_text",
                   "annotations": [],
                   "logprobs": [],
-                  "text": "Which repository do you want info for? Please provide the owner and repo name (e.g., owner/repo) or paste the GitHub URL.\n\nAlso, what details would you like? I can fetch things like:\n- Description, license, topics, default branch\n- Stars/forks/watchers\n- Latest release/tags\n- Branches and recent commits\n- Open issues/PRs and their statuses\n- Languages and file structure"
+                  "text": "Sure\u2014what repository do you have in mind? Please provide either:\n- The GitHub URL, or\n- owner/repo (for example: vercel/next.js)\n\nAlso, what details would you like? I can fetch any of the following:\n- Overview: description, topics, license, default branch, stars/forks/watchers, last updated\n- Activity: recent commits, contributors\n- Code: branches, tags, languages, README\n- Releases: latest release, changelog\n- Work: open issues/PRs (counts or top items), labels, milestones\n\nIf you\u2019re not sure, I can pull a quick overview by default once you share the repo."
                 }
               ],
               "role": "assistant"
@@ -1896,16 +1896,16 @@ http_interactions:
           "usage": {
             "input_tokens": 5312,
             "input_tokens_details": {
-              "cached_tokens": 5248
+              "cached_tokens": 0
             },
-            "output_tokens": 671,
+            "output_tokens": 849,
             "output_tokens_details": {
-              "reasoning_tokens": 576
+              "reasoning_tokens": 704
             },
-            "total_tokens": 5983
+            "total_tokens": 6161
           },
           "user": null,
           "metadata": {}
         }
-  recorded_at: Wed, 19 Nov 2025 20:46:12 GMT
+  recorded_at: Wed, 19 Nov 2025 21:00:39 GMT
 recorded_with: VCR 6.3.1

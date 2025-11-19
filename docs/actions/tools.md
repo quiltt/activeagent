@@ -17,13 +17,15 @@ The LLM calls `get_weather` automatically when it needs weather data, and uses t
 
 ## Provider Support Matrix
 
-| Provider       | Functions | Server-side Tools | MCP Support | Notes |
-|:---------------|:---------:|:-----------------:|:-----------:|:------|
-| **OpenAI**     | 🟩        | 🟩                | 🟩          | Server-side tools and MCP require Responses API |
-| **Anthropic**  | 🟩        | 🟩                | 🟨          | MCP in beta |
-| **OpenRouter** | 🟩        | ❌                | 🟦          | MCP via converted tool definitions; model-dependent capabilities |
-| **Ollama**     | 🟩        | ❌                | ❌          | Model-dependent capabilities |
-| **Mock**       | 🟦        | ❌                | ❌          | Accepted but not enforced |
+| Provider       | Functions | Server-side Tools | Notes |
+|:---------------|:---------:|:-----------------:|:------|
+| **OpenAI**     | 🟩        | 🟩                | Server-side tools require Responses API |
+| **Anthropic**  | 🟩        | 🟩                | Full support for built-in tools |
+| **OpenRouter** | 🟩        | ❌                | Model-dependent capabilities |
+| **Ollama**     | 🟩        | ❌                | Model-dependent capabilities |
+| **Mock**       | 🟦        | ❌                | Accepted but not enforced |
+
+For **MCP (Model Context Protocol)** support, see the [MCP documentation](/actions/mcps).
 
 ## Functions
 
@@ -131,24 +133,6 @@ OpenAI's **Responses API** provides several built-in tools (requires GPT-5, GPT-
 
 Anthropic provides web access and specialized capabilities including Web Search for real-time information, Web Fetch (Beta) for specific URLs, Extended Thinking to show reasoning processes, and Computer Use (Beta) for interface interaction. For complete details and examples, see [Anthropic's tool use documentation](https://docs.claude.com/en/docs/agents-and-tools/tool-use/overview).
 
-## Model Context Protocol (MCP)
-
-MCP (Model Context Protocol) enables agents to connect to external services and APIs. Think of it as a universal adapter for integrating tools and data sources.
-
-### OpenAI MCP Integration
-
-OpenAI supports MCP through their Responses API in two ways: pre-built connectors for popular services (Dropbox, Google Drive, GitHub, Slack, and more) and custom MCP servers. For complete details on OpenAI's MCP support, connector IDs, and configuration options, see [OpenAI's MCP documentation](https://platform.openai.com/docs/guides/mcp).
-
-### Anthropic MCP Integration
-
-Anthropic supports MCP servers via the `mcp_servers` parameter (beta feature). You can connect up to 20 MCP servers per request. For the latest on Anthropic's MCP implementation and configuration, see [Anthropic's MCP documentation](https://docs.anthropic.com/en/docs/build-with-claude/mcp).
-
-### OpenRouter MCP Integration
-
-::: info Coming Soon
-MCP support for OpenRouter is currently under development and will be available in a future release.
-:::
-
 ## Troubleshooting
 
 ### Tool Not Being Called
@@ -161,6 +145,7 @@ If the LLM passes unexpected parameters, add detailed parameter descriptions wit
 
 ## Related Documentation
 
+- [MCP (Model Context Protocol)](/actions/mcps) - Connect to external services via MCP
 - [Agents](/agents) - Understand the agent lifecycle and callbacks
 - [Generation](/agents/generation) - Execute tool-enabled generations
 - [Messages](/actions/messages) - Learn about conversation structure

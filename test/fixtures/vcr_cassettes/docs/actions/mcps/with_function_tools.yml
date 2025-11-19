@@ -5,7 +5,8 @@ http_interactions:
     uri: https://api.openai.com/v1/responses
     body:
       encoding: UTF-8
-      string: '{"model":"gpt-4.1","input":"What tools do you have available?","tools":[{"type":"mcp","server_label":"cloudflare-demo","server_url":"https://demo-day.mcp.cloudflare.com/sse"}]}'
+      string: '{"model":"gpt-4o","input":"Calculate and fetch data","tools":[{"type":"function","name":"calculate","description":"Perform
+        calculations","parameters":{"type":"object","properties":{"operation":{"type":"string"},"a":{"type":"number"},"b":{"type":"number"}}}},{"type":"mcp","server_label":"data-service","server_url":"https://demo-day.mcp.cloudflare.com/sse"}]}'
     headers:
       Accept-Encoding:
       - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
@@ -40,14 +41,14 @@ http_interactions:
       X-Stainless-Timeout:
       - '600.0'
       Content-Length:
-      - '176'
+      - '359'
   response:
     status:
       code: 200
       message: OK
     headers:
       Date:
-      - Wed, 19 Nov 2025 21:01:31 GMT
+      - Wed, 19 Nov 2025 21:18:40 GMT
       Content-Type:
       - application/json
       Transfer-Encoding:
@@ -61,7 +62,7 @@ http_interactions:
       X-Ratelimit-Remaining-Requests:
       - '9999'
       X-Ratelimit-Remaining-Tokens:
-      - '29999906'
+      - '29999877'
       X-Ratelimit-Reset-Requests:
       - 6ms
       X-Ratelimit-Reset-Tokens:
@@ -73,18 +74,18 @@ http_interactions:
       Openai-Project:
       - PROJECT_ID
       X-Request-Id:
-      - req_9295f14d4dd84dc099101d59970868b8
+      - req_97e30c6e2dd8442fac1d39d983b83032
       Openai-Processing-Ms:
-      - '4649'
+      - '3735'
       X-Envoy-Upstream-Service-Time:
-      - '4652'
+      - '3738'
       Cf-Cache-Status:
       - DYNAMIC
       Set-Cookie:
-      - __cf_bm=t6Md2Z8ktst2TLkho7mrzHR.qTEsSKKfrt9BW1zmbyo-1763586091-1.0.1.1-vxuhqec9qHLE6XEsGrnq1uWrMmmrlkW7D_oK9rL8dm9hHrlehfKYXHaiLKu9lK2WcXN1hbUsQNmNeyJT9mNBjCU289KxVecnenZX5YwdTL4;
-        path=/; expires=Wed, 19-Nov-25 21:31:31 GMT; domain=.api.openai.com; HttpOnly;
+      - __cf_bm=K4Fs.WFgYwgYVtywHwlxG7Ql5TmXfOl.hoVGueJW7rA-1763587120-1.0.1.1-C01.FBW5GdpmCkngSeInqzWaB3a6xl_py8UR0dLo1NBtGJgS7gh7wqp_0C6tc8MbdVEUj5C_XQF7qhBCKV4cNAg.96KyKVChgbTpKn_GHTI;
+        path=/; expires=Wed, 19-Nov-25 21:48:40 GMT; domain=.api.openai.com; HttpOnly;
         Secure; SameSite=None
-      - _cfuvid=23UO7O0FsnZCexgZIpX9RBhJbaDwQqPEq9WBoSNKWD8-1763586091570-0.0.1.1-604800000;
+      - _cfuvid=MUGXWvk6.0P3MgHKcKKOXHrb1h3yy4gpxxY0SH_TLjs-1763587120453-0.0.1.1-604800000;
         path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
@@ -93,16 +94,16 @@ http_interactions:
       Server:
       - cloudflare
       Cf-Ray:
-      - 9a12a492d923cf2e-SJC
+      - 9a12bdb68d96ebe7-SJC
       Alt-Svc:
       - h3=":443"; ma=86400
     body:
       encoding: ASCII-8BIT
       string: |-
         {
-          "id": "resp_0a7f52788c12648f00691e3026e910819aa4466498f7e2f09a",
+          "id": "resp_0c71d0fe20fc9d9000691e342cb7148199b97b067fb2fe96f9",
           "object": "response",
-          "created_at": 1763586087,
+          "created_at": 1763587117,
           "status": "completed",
           "background": false,
           "billing": {
@@ -113,12 +114,12 @@ http_interactions:
           "instructions": null,
           "max_output_tokens": null,
           "max_tool_calls": null,
-          "model": "gpt-4.1-2025-04-14",
+          "model": "gpt-4o-2024-08-06",
           "output": [
             {
-              "id": "mcpl_0a7f52788c12648f00691e3027380c819a8fa6e670b6533e37",
+              "id": "mcpl_0c71d0fe20fc9d9000691e342d15f881999a7e283f8ab13502",
               "type": "mcp_list_tools",
-              "server_label": "cloudflare-demo",
+              "server_label": "data-service",
               "tools": [
                 {
                   "annotations": {
@@ -134,7 +135,7 @@ http_interactions:
               ]
             },
             {
-              "id": "msg_0a7f52788c12648f00691e30289804819ab5994045994e21da",
+              "id": "msg_0c71d0fe20fc9d9000691e342fc7b48199bcf2a22f78a3de03",
               "type": "message",
               "status": "completed",
               "content": [
@@ -142,7 +143,7 @@ http_interactions:
                   "type": "output_text",
                   "annotations": [],
                   "logprobs": [],
-                  "text": "Here are the tools I have available right now:\n\n1. **Image Input Capabilities:** I can analyze and interpret images you upload.\n2. **Cloudflare MCP Demo Day Information:** I have access to a tool (`mcp_cloudflare-demo`) that allows me to fetch information specifically related to Cloudflare\u2019s MCP (Magic Cloud Platform) Demo Day.\n\nIf you have a specific question or need information using one of these tools, just let me know!"
+                  "text": "Sure, I can help with that. What calculation would you like to perform, and what specific data are you seeking?"
                 }
               ],
               "role": "assistant"
@@ -169,12 +170,38 @@ http_interactions:
           "tool_choice": "auto",
           "tools": [
             {
+              "type": "function",
+              "description": "Perform calculations",
+              "name": "calculate",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "operation": {
+                    "type": "string"
+                  },
+                  "a": {
+                    "type": "number"
+                  },
+                  "b": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": false,
+                "required": [
+                  "operation",
+                  "a",
+                  "b"
+                ]
+              },
+              "strict": true
+            },
+            {
               "type": "mcp",
               "allowed_tools": null,
               "headers": null,
               "require_approval": "always",
               "server_description": null,
-              "server_label": "cloudflare-demo",
+              "server_label": "data-service",
               "server_url": "https://demo-day.mcp.cloudflare.com/sse"
             }
           ],
@@ -182,18 +209,18 @@ http_interactions:
           "top_p": 1.0,
           "truncation": "disabled",
           "usage": {
-            "input_tokens": 75,
+            "input_tokens": 104,
             "input_tokens_details": {
               "cached_tokens": 0
             },
-            "output_tokens": 93,
+            "output_tokens": 26,
             "output_tokens_details": {
               "reasoning_tokens": 0
             },
-            "total_tokens": 168
+            "total_tokens": 130
           },
           "user": null,
           "metadata": {}
         }
-  recorded_at: Wed, 19 Nov 2025 21:01:31 GMT
+  recorded_at: Wed, 19 Nov 2025 21:18:40 GMT
 recorded_with: VCR 6.3.1

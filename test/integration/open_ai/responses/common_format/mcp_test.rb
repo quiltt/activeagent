@@ -27,7 +27,7 @@ module Integration
             def common_format_single_server
               prompt(
                 input: "Get the current weather",
-                mcp_servers: [
+                mcps: [
                   { name: "weather", url: "https://demo-day.mcp.cloudflare.com/sse" }
                 ]
               )
@@ -49,7 +49,7 @@ module Integration
             def common_format_single_server_with_auth
               prompt(
                 input: "Get repository information",
-                mcp_servers: [
+                mcps: [
                   { name: "github_copilot", url: "https://api.githubcopilot.com/mcp/", authorization: ENV["GITHUB_MCP_TOKEN"] }
                 ]
               )
@@ -76,7 +76,7 @@ module Integration
             def common_format_multiple_servers
               prompt(
                 input: "Get the weather and repository information",
-                mcp_servers: [
+                mcps: [
                   { name: "weather", url: "https://demo-day.mcp.cloudflare.com/sse" },
                   { name: "github_copilot", url: "https://api.githubcopilot.com/mcp/", authorization: ENV["GITHUB_MCP_TOKEN"] }
                 ]
@@ -125,7 +125,7 @@ module Integration
                     }
                   }
                 ],
-                mcp_servers: [
+                mcps: [
                   { name: "weather", url: "https://demo-day.mcp.cloudflare.com/sse" }
                 ]
               )

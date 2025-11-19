@@ -5,8 +5,8 @@ http_interactions:
     uri: https://api.anthropic.com/v1/messages?beta=true
     body:
       encoding: UTF-8
-      string: '{"model":"claude-haiku-4-5","max_tokens":1024,"messages":[{"content":"What
-        tools do you have available?","role":"user"}],"mcp_servers":[{"name":"cloudflare-demo","type":"url","url":"https://demo-day.mcp.cloudflare.com/sse"}]}'
+      string: '{"model":"claude-haiku-4-5","messages":[{"content":"What tools are
+        available?","role":"user"}],"max_tokens":4096,"mcp_servers":[{"name":"demo-server","type":"url","url":"https://demo-day.mcp.cloudflare.com/sse"}]}'
     headers:
       Accept-Encoding:
       - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
@@ -41,14 +41,14 @@ http_interactions:
       X-Stainless-Timeout:
       - '600.0'
       Content-Length:
-      - '225'
+      - '213'
   response:
     status:
       code: 200
       message: OK
     headers:
       Date:
-      - Wed, 19 Nov 2025 20:59:22 GMT
+      - Wed, 19 Nov 2025 21:18:51 GMT
       Content-Type:
       - application/json
       Transfer-Encoding:
@@ -60,35 +60,35 @@ http_interactions:
       Anthropic-Ratelimit-Input-Tokens-Remaining:
       - '4000000'
       Anthropic-Ratelimit-Input-Tokens-Reset:
-      - '2025-11-19T20:59:22Z'
+      - '2025-11-19T21:18:50Z'
       Anthropic-Ratelimit-Output-Tokens-Limit:
       - '800000'
       Anthropic-Ratelimit-Output-Tokens-Remaining:
       - '800000'
       Anthropic-Ratelimit-Output-Tokens-Reset:
-      - '2025-11-19T20:59:22Z'
+      - '2025-11-19T21:18:51Z'
       Anthropic-Ratelimit-Requests-Limit:
       - '4000'
       Anthropic-Ratelimit-Requests-Remaining:
       - '3999'
       Anthropic-Ratelimit-Requests-Reset:
-      - '2025-11-19T20:59:20Z'
+      - '2025-11-19T21:18:50Z'
       Retry-After:
-      - '38'
+      - '10'
       Anthropic-Ratelimit-Tokens-Limit:
       - '4800000'
       Anthropic-Ratelimit-Tokens-Remaining:
       - '4800000'
       Anthropic-Ratelimit-Tokens-Reset:
-      - '2025-11-19T20:59:22Z'
+      - '2025-11-19T21:18:50Z'
       Request-Id:
-      - req_011CVHvJcYHonXtRU5bKdaSE
+      - req_011CVHwnnL48nmgHJDW47Snx
       Strict-Transport-Security:
       - max-age=31536000; includeSubDomains; preload
       Anthropic-Organization-Id:
       - 2557c2f2-bcfa-4054-9fa8-ae13b3b47d6b
       X-Envoy-Upstream-Service-Time:
-      - '2893'
+      - '3100'
       Cf-Cache-Status:
       - DYNAMIC
       X-Robots-Tag:
@@ -96,14 +96,15 @@ http_interactions:
       Server:
       - cloudflare
       Cf-Ray:
-      - 9a12a1788ffbf93d-SJC
+      - 9a12be02bb591f2f-SJC
     body:
       encoding: ASCII-8BIT
-      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_012mvHMmb8rh3yPG2eH2QfD9","type":"message","role":"assistant","content":[{"type":"text","text":"I
-        have access to one tool:\n\n1. **cloudflare-demo_mcp_demo_day_info** - Get
-        information about Cloudflare''s MCP Demo Day. Use this tool if you have questions
-        about Cloudflare''s MCP demo day.\n\nThis tool allows me to retrieve details
-        about Cloudflare''s MCP (Model Context Protocol) Demo Day event. If you''d
-        like to know more about this event, feel free to ask!"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":585,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":102,"service_tier":"standard"}}'
-  recorded_at: Wed, 19 Nov 2025 20:59:22 GMT
+      string: '{"model":"claude-haiku-4-5-20251001","id":"msg_01EAYgadXov5fnUqr13pDWuT","type":"message","role":"assistant","content":[{"type":"text","text":"Based
+        on the tools I have access to, here''s what''s available:\n\n1. **demo-server_mcp_demo_day_info**
+        - Get information about Cloudflare''s MCP Demo Day\n   - This tool allows
+        you to retrieve details about Cloudflare''s MCP (Model Context Protocol) demo
+        day event\n   - No parameters required\n\nThat''s the tool currently available
+        in my environment. If you''d like to learn more about Cloudflare''s MCP Demo
+        Day, I can fetch that information for you!"}],"stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":581,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":117,"service_tier":"standard"}}'
+  recorded_at: Wed, 19 Nov 2025 21:18:52 GMT
 recorded_with: VCR 6.3.1
