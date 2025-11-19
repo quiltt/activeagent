@@ -73,7 +73,11 @@ module ActiveAgent
             # Step 6: Normalize input content for gem compatibility
             params[:input] = Responses::Transforms.normalize_input(params[:input]) if params[:input]
 
-            # Step 7: Create gem model - delegates to OpenAI gem
+            # Step 7: Normalize tools and tool_choice from common format
+            params[:tools] = Responses::Transforms.normalize_tools(params[:tools]) if params[:tools]
+            params[:tool_choice] = Responses::Transforms.normalize_tool_choice(params[:tool_choice]) if params[:tool_choice]
+
+            # Step 8: Create gem model - delegates to OpenAI gem
             gem_model = ::OpenAI::Models::Responses::ResponseCreateParams.new(**params)
 
             # Step 8: Delegate all method calls to gem model
