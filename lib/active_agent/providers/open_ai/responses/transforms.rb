@@ -69,6 +69,42 @@ module ActiveAgent
               end
             end
 
+            # Normalizes MCP servers from common format to OpenAI Responses API format.
+            #
+            # Common format:
+            #   {name: "stripe", url: "https://...", authorization: "token"}
+            # OpenAI format:
+            #   {type: "mcp", server_label: "stripe", server_url: "https://...", authorization: "token"}
+            #
+            # @param mcp_servers [Array<Hash>]
+            # @return [Array<Hash>]
+            def normalize_mcp_servers(mcp_servers)
+              return mcp_servers unless mcp_servers.is_a?(Array)
+
+              mcp_servers.map do |server|
+                server_hash = server.is_a?(Hash) ? server.deep_symbolize_keys : server
+
+                # If already in OpenAI format (has type: "mcp" and server_label), return as-is
+                if server_hash[:type] == "mcp" && server_hash[:server_label]
+                  next server_hash
+                end
+
+                # Convert common format to OpenAI format
+                result = {
+                  type: "mcp",
+                  server_label: server_hash[:name] || server_hash[:server_label],
+                  server_url: server_hash[:url] || server_hash[:server_url]
+                }
+
+                # Keep authorization field (OpenAI uses 'authorization', not 'authorization_token')
+                if server_hash[:authorization]
+                  result[:authorization] = server_hash[:authorization]
+                end
+
+                result.compact
+              end
+            end
+
             # Normalizes tool_choice from common format to OpenAI Responses API format.
             #
             # Responses API uses flat format for specific tool choice, unlike Chat API's nested format.
