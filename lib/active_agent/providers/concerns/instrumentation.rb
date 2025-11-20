@@ -44,50 +44,151 @@ module ActiveAgent
       # @param response [Common::PromptResponse] completed response with normalized data
       # @return [void]
       def instrumentation_prompt_payload(payload, request, response)
-        # Add request parameters
-        payload.merge!(
-          trace_id: trace_id,
-          message_count: request.messages&.size || 0,
-          stream: !!request.stream
-        )
+        # message_count: prefer the request/input messages (pre-call), fall back to
+        # response messages only if the request doesn't expose messages. New Relic
+        # expects parameters[:messages] to be the request messages and computes
+        # total message counts by adding response choices to that count.
+        message_count = safe_access(request, :messages)&.size
+        message_count = safe_access(response, :messages)&.size if message_count.nil?
 
-        # Add common parameters if available
-        payload[:model]       = request.model       if request.respond_to?(:model)
-        payload[:temperature] = request.temperature if request.respond_to?(:temperature)
-        payload[:max_tokens]  = request.max_tokens  if request.respond_to?(:max_tokens)
-        payload[:top_p]       = request.top_p       if request.respond_to?(:top_p)
+        payload.merge!(trace_id: trace_id, message_count: message_count || 0, stream: !!safe_access(request, :stream))
 
-        # Add tool information
-        if request.respond_to?(:tools)
-          payload[:has_tools]  = request.tools.present?
-          payload[:tool_count] = request.tools&.size || 0
+        # Common parameters: prefer response-normalized values, then request
+        payload[:model]       = safe_access(response, :model) || safe_access(request, :model)
+        payload[:temperature] = safe_access(request, :temperature)
+        payload[:max_tokens]  = safe_access(request, :max_tokens)
+        payload[:top_p]       = safe_access(request, :top_p)
+
+        # Tools / instructions
+        if (tools_val = safe_access(request, :tools))
+          payload[:has_tools]  = tools_val.respond_to?(:present?) ? tools_val.present? : !!tools_val
+          payload[:tool_count] = tools_val&.size || 0
         end
 
-        # Add instructions indicator if available
-        if request.respond_to?(:instructions)
-          payload[:has_instructions] = request.instructions.present?
+        if (instr_val = safe_access(request, :instructions))
+          payload[:has_instructions] = instr_val.respond_to?(:present?) ? instr_val.present? : !!instr_val
         end
 
-        # Add usage data if available (CRITICAL for APM integration)
-        # The Usage object already normalizes token counts across all providers
+        # Usage (normalized)
         if response.usage
+          usage = response.usage
           payload[:usage] = {
-            input_tokens:  response.usage.input_tokens,
-            output_tokens: response.usage.output_tokens,
-            total_tokens:  response.usage.total_tokens
+            input_tokens:  usage.input_tokens,
+            output_tokens: usage.output_tokens,
+            total_tokens:  usage.total_tokens
           }
-          # Add all available usage tokens (cached, reasoning, audio, etc.)
-          payload[:usage][:cached_tokens]         = response.usage.cached_tokens         if response.usage.cached_tokens
-          payload[:usage][:cache_creation_tokens] = response.usage.cache_creation_tokens if response.usage.cache_creation_tokens
-          payload[:usage][:reasoning_tokens]      = response.usage.reasoning_tokens      if response.usage.reasoning_tokens
-          payload[:usage][:audio_tokens]          = response.usage.audio_tokens          if response.usage.audio_tokens
+
+          payload[:usage][:cached_tokens]         = usage.cached_tokens         if usage.cached_tokens
+          payload[:usage][:cache_creation_tokens] = usage.cache_creation_tokens if usage.cache_creation_tokens
+          payload[:usage][:reasoning_tokens]      = usage.reasoning_tokens      if usage.reasoning_tokens
+          payload[:usage][:audio_tokens]          = usage.audio_tokens          if usage.audio_tokens
         end
 
-        # Add response metadata directly from response object
-        # The response model provides normalized access across all providers
-        payload[:finish_reason]  = response.finish_reason
-        payload[:response_model] = response.model
-        payload[:response_id]    = response.id
+        # Response metadata
+        payload[:finish_reason]  = safe_access(response, :finish_reason) || response.finish_reason
+        payload[:response_model] = safe_access(response, :model)         || response.model
+        payload[:response_id]    = safe_access(response, :id)            || response.id
+
+        # Build messages list: prefer request messages; if unavailable use prior
+        # response messages (all but the final generated message).
+        if (req_msgs = safe_access(request, :messages)).is_a?(Array)
+          payload[:messages] = req_msgs.map { |m| extract_message_hash(m, false) }
+        else
+          prior = safe_access(response, :messages)
+          prior = prior[0...-1] if prior.is_a?(Array) && prior.size > 1
+          if prior.is_a?(Array) && prior.any?
+            payload[:messages] = prior.map { |m| extract_message_hash(m, false) }
+          end
+        end
+
+        # Build a parameters hash that mirrors what New Relic's OpenAI
+        # instrumentation expects. This makes it easy for APM adapters to
+        # map our provider payload to their LLM event constructors.
+        parameters = {}
+        parameters[:model]       = payload[:model]       if payload[:model]
+        parameters[:max_tokens]  = payload[:max_tokens]  if payload[:max_tokens]
+        parameters[:temperature] = payload[:temperature] if payload[:temperature]
+        parameters[:top_p]       = payload[:top_p]       if payload[:top_p]
+        parameters[:stream]      = payload[:stream]
+        parameters[:messages]    = payload[:messages]    if payload[:messages]
+
+        # Include tools/instructions where available — New Relic ignores unknown keys,
+        # but having them here makes the parameter shape closer to OpenAI's.
+        parameters[:tools]        = begin request.tools        rescue nil end if begin request.tools        rescue nil end
+        parameters[:instructions] = begin request.instructions rescue nil end if begin request.instructions rescue nil end
+
+        payload[:parameters] = parameters
+
+        # Attach raw response (provider-specific) so downstream APM integrations
+        # can inspect the provider response if needed. Use the normalized raw_response
+        # available on the Common::Response when possible.
+        begin
+          payload[:response_raw] = response.raw_response if response.respond_to?(:raw_response) && response.raw_response
+        rescue StandardError
+          # ignore
+        end
+      end
+
+      private
+
+      # Safely attempt to call a method or lookup a key on an object. We avoid
+      # probing with `respond_to?` to prevent ActiveModel attribute casting side
+      # effects; instead we attempt the call and rescue failures.
+      def safe_access(obj, name)
+        return nil if obj.nil?
+
+        begin
+          return obj.public_send(name)
+        rescue StandardError
+        end
+
+        begin
+          return obj[name]
+        rescue StandardError
+        end
+
+        begin
+          return obj[name.to_s]
+        rescue StandardError
+        end
+
+        nil
+      end
+
+      # NOTE: message access is handled via `safe_access(obj, :messages)` to
+      # avoid duplicating guarded lookup logic.
+
+      # Extract a simple hash from a provider message object or hash-like value.
+      def extract_message_hash(msg, is_response = false)
+        role = begin
+          if msg.respond_to?(:[])
+            begin msg[:role] rescue (begin msg["role"] rescue nil end) end
+          elsif msg.respond_to?(:role)
+            msg.role
+          elsif msg.respond_to?(:type)
+            msg.type
+          end
+        rescue StandardError
+          begin msg.role rescue msg.type rescue nil end
+        end
+
+        content = begin
+          if msg.respond_to?(:[])
+            begin msg[:content] rescue (begin msg["content"] rescue nil end) end
+          elsif msg.respond_to?(:content)
+            msg.content
+          elsif msg.respond_to?(:text)
+            msg.text
+          elsif msg.respond_to?(:to_h)
+            begin msg.to_h[:content] rescue (begin msg.to_h["content"] rescue nil end) end
+          elsif msg.respond_to?(:to_s)
+            msg.to_s
+          end
+        rescue StandardError
+          begin msg.to_s rescue nil end
+        end
+
+        { role: role, content: content, is_response: is_response }
       end
 
       # Builds and merges payload data for embed instrumentation events.
