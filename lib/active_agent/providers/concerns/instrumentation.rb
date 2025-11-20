@@ -218,6 +218,18 @@ module ActiveAgent
           end
         end
 
+        # Expose embedding input content similarly to message content.
+        # Use guarded access to avoid provider-specific errors.
+        begin
+          if (emb_input = safe_access(request, :input))
+            # Keep the raw input (string or array) in the payload so APM adapters
+            # can inspect it. This matches how we include message content.
+            payload[:input] = emb_input
+          end
+        rescue StandardError
+          # ignore
+        end
+
         # Add encoding format if available (OpenAI)
         payload[:encoding_format] = request.encoding_format if request.respond_to?(:encoding_format)
 
@@ -239,6 +251,12 @@ module ActiveAgent
         # Add response metadata directly from response object
         payload[:response_model] = response.model
         payload[:response_id]    = response.id
+
+        # Build a parameters hash for embeddings to match New Relic's shape.
+        emb_params = {}
+        emb_params[:model] = payload[:model] if payload[:model]
+        emb_params[:input] = payload[:input] if payload.key?(:input)
+        payload[:parameters] = emb_params unless emb_params.empty?
       end
     end
   end
