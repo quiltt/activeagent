@@ -17,6 +17,9 @@ module ActiveAgent
     #
     # @see BaseProvider
     class AnthropicProvider < BaseProvider
+      # Lead-in message for JSON response format emulation
+      JSON_RESPONSE_FORMAT_LEAD_IN = "Here is the JSON requested:\n{"
+
       # @todo Add support for Anthropic::BedrockClient and Anthropic::VertexClient
       # @return [Anthropic::Client]
       def client
@@ -72,7 +75,7 @@ module ActiveAgent
 
         self.message_stack.push({
           role:    "assistant",
-          content: "Here is the JSON requested:\n{"
+          content: JSON_RESPONSE_FORMAT_LEAD_IN
         })
       end
 
@@ -227,7 +230,7 @@ module ActiveAgent
 
       #
       # Handles JSON response format simulation by prepending `{` to the response
-      # content after removing the assistant lead-in message.
+      # content if the last message in the request is the JSON lead-in prompt.
       #
       # @see BaseProvider#process_prompt_finished_extract_messages
       # @param api_response [Hash] converted response hash
@@ -235,10 +238,20 @@ module ActiveAgent
       def process_prompt_finished_extract_messages(api_response)
         return unless api_response
 
-        # Handle JSON response format simulation
-        if request.response_format&.dig(:type) == "json_object"
-          request.pop_message!
-          api_response[:content][0][:text] = "{#{api_response[:content][0][:text]}"
+        # Get the last message (may be either Hash or gem object)
+        last_message = request.messages.last
+        last_role    = last_message.is_a?(Hash) ? last_message[:role]    : last_message&.role
+        last_content = last_message.is_a?(Hash) ? last_message[:content] : last_message&.content
+
+        # Check if the last message in request is the JSON lead-in prompt
+        if last_role.to_sym == :assistant && last_content == JSON_RESPONSE_FORMAT_LEAD_IN
+          # Remove the lead-in message from the request
+          request.messages.pop
+
+          # Prepend "{" to the response's first content text
+          if api_response[:content]&.first&.dig(:text)
+            api_response[:content][0][:text] = "{#{api_response[:content][0][:text]}"
+          end
         end
 
         [ api_response ]
